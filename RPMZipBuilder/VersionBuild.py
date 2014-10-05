@@ -1,5 +1,10 @@
 __author__ = 'danielk'
-
+###############################################################################
+#
+# This script builds list of knew version files.
+# usage: VersionBuild configuration_file [csvfile]
+#
+###############################################################################
 import sys,re,zipfile,os
 
 def ExtarctVer(FullPath):
