@@ -1,0 +1,36 @@
+Component Name,Last Version,Next version,Change,Package Location
+kernel,N/A,2.6.18-274.18,New !,\\ilfs03\Versions\Development\RnD-Dev\Deliverables-to-QA\Harmony\Harmony_7.0\Harmony 7.0.0 Alpha#4\Drop 08-04-13\RPMs/kernel-2.6.18-274.18.1_fn_2.0.0.35.el5.x86_64.rpm
+spawn-fcgi,1.6.3-1,N/A,New !,
+squid,1.3.0-37,1.3.0-37,From Last Drop,
+transcoder,11.0-0.42,11.0-0.42,From Last Drop,
+fnkernel-devel,3.0.0.36,3.0.0.36,From Last Drop,
+Flash_watchdogs,1.0-0.10,1.0-0.10,From Last Drop,
+Flash_Munin_Monitors,N/A,6.3-0.16,New !,\\ilfs03\Versions\Development\RnD-Dev\Deliverables-to-QA\Harmony\Harmony_7.0\Harmony 7.0.0 Alpha#4\Drop 08-04-13\RPMs/Flash_Munin_Monitors-6.3-0.16.noarch.rpm
+LDM,2.2-0.6,2.2-0.6,From Last Drop,
+FlashConf,7.0-0.24,7.0-0.24,From Last Drop,
+sitepdp,11.0-0.101,11.0-0.101,From Last Drop,
+transcoder_scripts,11.0-0.13,11.0-0.13,From Last Drop,
+SysStat,1.0-0.25,1.0-0.25,From Last Drop,
+Flash_ResourceStatus,2.0-0.47,2.0-0.48,New !,\\ilfs03\Versions\CM\versions\System_V11\Flash_ResourceStatus/Flash_ResourceStatus-2.0-0.48/Flash_ResourceStatus-2.0-0.48.noarch.rpm
+hslb,N/A,2.1-0.6,New !,\\ilfs03\Versions\Development\RnD-Dev\Deliverables-to-QA\Harmony\Harmony_7.0\Harmony 7.0.0 Alpha#4\Drop 08-04-13\RPMs/hslb-2.1-0.6.noarch.rpm
+fnkernel,3.0.0.36,3.0.0.36,From Last Drop,
+ripcode-transcoder,4.6.6-21,4.6.6-21,From Last Drop,
+csrv,2.6-0.4,2.6-0.4,From Last Drop,
+HPI,11.0-0.101,11.0-0.101,From Last Drop,
+hstlo,3.0.0-49,3.0.0-49,From Last Drop,
+policyadmin,11.0-0.101,11.0-0.101,From Last Drop,
+TLO,N/A,8.0.0-0022,New !,\\ilfs03\Versions\Development\RnD-Dev\Deliverables-to-QA\Harmony\Harmony_7.0\Harmony 7.0.0 Alpha#4\Drop 08-04-13\RPMs/TLO-8.0.0-0022.rh5.x86_64.rpm
+munin-flash,7.0-5.16,7.0-5.16,From Last Drop,
+CLIENT_SERVER_ALP,N/A,3.1.0-0011,New !,\\ilfs03\Versions\Development\RnD-Dev\Deliverables-to-QA\Harmony\Harmony_7.0\Harmony 7.0.0 Alpha#4\Drop 08-04-13\RPMs/CLIENT_SERVER_ALP-3.1.0-0011.x86_64.rpm
+LCT,1.0-4.2,1.0-4.2,From Last Drop,
+adcMspMon,1.0-0.8,1.0-0.8,From Last Drop,
+ripcode-MSP-transcoder,N/A,4.6.6-21,New !,\\ilfs03\Versions\CM\versions\RipCode_Transcoder_4.6/Transcoder_V4.6.6.21/ripcode-MSP-transcoder-4.6.6-21.x86_64.rpm
+failover,1.7-0.11,1.7-0.12,New !,\\ilfs03\Versions\CM\versions\System_V11\failover/failover-1.7-0.12/failover-1.7-0.12.noarch.rpm
+flrscon,2.0-0.14,2.0-0.14,From Last Drop,
+reports,11.0.0-75,11.0.0-75,From Last Drop,
+dailyReports,1.0.0-41,1.0.0-30,New !,\\ilfs03\Versions\Development\RnD-Dev\Deliverables-to-QA\Harmony\Harmony_7.0\Harmony 7.0.0 Alpha#4\Drop 08-04-13\RPMs/dailyReports-V1.0.0-30.noarch.rpm
+IPS,3.0.0-0120,3.0.0-0121,New !,\\ilfs03\Versions\CM\versions\IPS_3.0/IPS_V3.0.0.121/RedHat6/64bit/IPS-3.0.0-0121.el6.x86_64.rpm
+HLM,1.5-7.24,1.5-7.24,From Last Drop,
+ems,5.0-0.80,5.0-0.80,From Last Drop,
+transcoder_dependencies,N/A,4.6-5.4,New !,\\ilfs03\Versions\Development\RnD-Dev\Deliverables-to-QA\Harmony\Harmony_7.0\Harmony 7.0.0 Alpha#4\Drop 08-04-13\RPMs/transcoder_dependencies-4.6-5.4.noarch.rpm
+video_squid,2.74.0-0111,2.74.0-0111,From Last Drop,

@@ -1,0 +1,74 @@
+# This is Example Configuration file
+# The file should contain the [Target] section (Name of the zip file)
+# and [List] section List of Rpms to add tp zip file ....
+[Target]
+
+#C:\Users\danielk\Documents\Integration\H6.0.1\v6.0.4.8\Post-Install\RPMs_DVD7.7.0.15_To_H6.0.4.8.zip
+#\\ilfs03\Versions\Development\RnD-Dev\Deliverables-to-QA\Harmony\Harmony_7.5\Drop_14_09_14_Alpha#14
+##C:\Users\danielk\PycharmProjects\RPMZipBuilder\RPMs_DVD11.0_0.4_To_H7.5_23-09-14.zip
+\\ilfs03\Versions\Development\RnD-Dev\Deliverables-to-QA\Harmony\Harmony_7.5\Drop_140928_Alpha#15\RPMs_DVD11.0_0.4_To_H7.5_140928.zip
+
+[Aliases]
+IBM=IBM_Netxtreme
+Stam=Yofi Tofi
+Bugi=oops
+kernel=Ignore
+Flash_Munin_Monitors=Ignore
+CLIENT_SERVER_ALP=Ignore
+transcoder_dependencies=Ignore
+
+[List]
+\\ilfs03\Versions\CM\versions\OnM\EMS\EMS_5.0\EMS_V5.0.0.80\ems-5.0-0.80.noarch.rpm
+\\ilfs03\Versions\CM\versions\Kernel_6.5\KERNEL_RHEL_6.5_fn_3.0.0.36\RPMS\fnkernel-2.6.32-431.11.2_fn_3.0.0.36.el6.x86_64.rpm
+\\ilfs03\Versions\CM\versions\Kernel_6.5\KERNEL_RHEL_6.5_fn_3.0.0.36\RPMS\fnkernel-devel-2.6.32-431.11.2_fn_3.0.0.36.el6.x86_64.rpm
+\\ccasefs\versions\CM\versions\Harmony_11\Harmony_V11.0.0.101\RPMs\HPI-11.0-0.101.noarch.rpm
+\\ccasefs\versions\CM\versions\Harmony_11\Harmony_V11.0.0.101\RPMs\policyadmin-11.0-0.101.noarch.rpm
+\\ccasefs\versions\CM\versions\Harmony_11\Harmony_V11.0.0.101\RPMs\sitepdp-11.0-0.101.noarch.rpm
+\\ilfs03\Versions\CM\versions\TM_11\TM_V11.0.0.42\pkg\transcoder-11.0-0.42.noarch.rpm
+\\ilfs03\Versions\CM\versions\HSTLO_JNI\HSTLO_JNI_V3.0.0.49\RedHat6.5\hstlo-3.0.0-49.el6.x86_64.rpm
+\\ilfs03\Versions\CM\versions\IPS_3.0\IPS_V3.0.0.120\RedHat6\64bit\IPS-3.0.0-0120.el6.x86_64.rpm
+\\ilfs03\Versions\CM\versions\FlashCache\FlashCache_V1.3.0.37\pkg\squid-1.3.0-37.noarch.rpm
+\\ilfs03\Versions\CM\versions\Squid_2.74\V2.74.0.111\video_squid-2.74.0-0111.i386.rpm
+\\ilfs03\Versions\CM\versions\System_V11\flrscon\flrscon-2.0-0.14\flrscon-2.0-0.14.noarch.rpm
+\\ilfs03\Versions\CM\versions\System_V11\LDM\LDM-2.2-0.6\LDM-2.2-0.6.noarch.rpm
+\\ilfs03\Versions\CM\versions\System_V11\Flash_Munin_Monitors_2.0\munin-flash-7.0-5.16\munin-flash-7.0-5.16.noarch.rpm
+\\ilfs03\Versions\CM\versions\System_V11\SysStat\SysStat-1.0-0.25\SysStat-1.0-0.25.noarch.rpm
+\\ilfs03\versions\Development\RnD-Dev\Deliverables-to-QA\Harmony\Reports\Reports_11.0.0.75\reports-11.0.0-75.i386.rpm
+#####  New Changes From Alpha 14.1 But not appear at Excel ##
+\\ilfs03\Versions\CM\versions\System_V11\csrv\csrv-2.6-0.4\csrv-2.6-0.4.noarch.rpm
+\\ilfs03\Versions\CM\versions\System_V11\failover\failover-1.7-0.11\failover-1.7-0.11.noarch.rpm
+\\ilfs03\Versions\CM\versions\System_V11\Flash_watchdogs\Flash_watchdogs-1.0-0.10\Flash_watchdogs-1.0-0.10.noarch.rpm
+\\ilfs03\Versions\CM\versions\System_V11\LCT\LCT-1.0-4.2\LCT-1.0-4.2.noarch.rpm
+\\ccasefs\versions\CM\versions\System_V11\IBM_netxtreme2-7\IBM_netxtreme2-7.8.56-0.4
+
+
+[Source]
+\\ilfs03\Versions\CM\versions\OnM\EMS\EMS_5.0
+\\ccasefs\versions\CM\versions\Harmony_11\*\RPMs
+\\ilfs03\Versions\CM\versions\HSTLO_JNI
+\\ilfs03\Versions\CM\versions\IPS_3.0
+\\ilfs03\Versions\CM\versions\FlashCache
+\\ilfs03\Versions\CM\versions\Squid_2.74
+\\ilfs03\Versions\CM\versions\System_V11\flrscon
+\\ilfs03\Versions\CM\versions\System_V11\LDM
+\\ilfs03\Versions\CM\versions\System_V11\Flash_Munin_Monitors_2.0
+\\ilfs03\Versions\CM\versions\System_V11\SysStat
+\\ilfs03\versions\Development\RnD-Dev\Deliverables-to-QA\Harmony\Reports
+#####  New Changes From Alpha 14.1 But not appear at Excel ##
+\\ilfs03\Versions\CM\versions\System_V11\csrv
+\\ilfs03\Versions\CM\versions\System_V11\failover
+\\ilfs03\Versions\CM\versions\System_V11\Flash_watchdogs
+\\ilfs03\Versions\CM\versions\System_V11\LCT
+\\ilfs03\Versions\CM\versions\System_V11\HLM
+\\ilfs03\Versions\CM\versions\System_V11\adcMspMon
+\\ilfs03\Versions\CM\versions\System_V11\Flash_ResourceStatus
+\\ilfs03\Versions\CM\versions\System_V11\configuration_menu.RHEL6
+\\ilfs03\Versions\CM\versions\TS_11\TS_*
+\\ilfs03\Versions\CM\versions\TM_11\TM_*\pkg
+\\ilfs03\Versions\CM\versions\RipCode_Transcoder_4.6
+\\ilfs03\Versions\CM\versions\Kernel_6.5\KERNEL_RHEL_6.5_fn_3.0.0.3*\RPMs\fnkernel-2*
+\\ilfs03\Versions\CM\versions\Kernel_6.5\KERNEL_RHEL_6.5_fn_3.0.0.3*\RPMs\fnkernel-devel*
+\\ilfs03\Versions\Development\RnD-Dev\Deliverables-to-QA\Harmony\Harmony_7*\Harmony*\*\RPMs
+\\ccasefs\versions\CM\versions\System_V11\IBM_netxtreme*
+
+

@@ -1,0 +1,725 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="112c7b8f-1379-471a-95bc-c581c7f73d15" name="Default" comment="" />
+    <ignored path="FixPackage.iws" />
+    <ignored path=".idea/workspace.xml" />
+    <option name="TRACKING_ENABLED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ChangesViewManager" flattened_view="true" show_ignored="false" />
+  <component name="CreatePatchCommitExecutor">
+    <option name="PATCH_PATH" value="" />
+  </component>
+  <component name="DaemonCodeAnalyzer">
+    <disable_hints />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="default_target" />
+  <component name="FavoritesManager">
+    <favorites_list name="FixPackage" />
+  </component>
+  <component name="FileEditorManager">
+    <leaf>
+      <file leaf-file-name="ConfClass.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/ConfClass.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="510">
+              <caret line="63" column="25" selection-start-line="63" selection-start-column="25" selection-end-line="63" selection-end-column="25" />
+              <folding>
+                <element signature="e#156#2105#0" expanded="false" />
+                <element signature="e#2137#5148#0" expanded="false" />
+                <element signature="e#2215#2379#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="PkgUtil.py" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/PkgUtil.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="1.214156" vertical-offset="147" max-vertical-offset="3077">
+              <caret line="136" column="0" selection-start-line="136" selection-start-column="0" selection-end-line="136" selection-end-column="0" />
+              <folding>
+                <element signature="e#24#38#0" expanded="true" />
+                <element signature="e#171#1174#0" expanded="false" />
+                <element signature="e#217#347#0" expanded="true" />
+                <element signature="e#379#405#0" expanded="true" />
+                <element signature="e#440#459#0" expanded="true" />
+                <element signature="e#493#575#0" expanded="true" />
+                <element signature="e#619#646#0" expanded="true" />
+                <element signature="e#689#748#0" expanded="true" />
+                <element signature="e#783#844#0" expanded="true" />
+                <element signature="e#895#1094#0" expanded="true" />
+                <element signature="e#1142#1174#0" expanded="true" />
+                <element signature="e#1204#3470#0" expanded="false" />
+                <element signature="e#1232#1244#0" expanded="true" />
+                <element signature="e#1696#1766#0" expanded="true" />
+                <element signature="e#3600#3713#0" expanded="true" />
+                <element signature="e#3757#3902#0" expanded="true" />
+                <element signature="e#3946#4219#0" expanded="true" />
+                <element signature="e#4262#4435#0" expanded="true" />
+                <element signature="e#4479#4505#0" expanded="true" />
+                <element signature="e#4540#4558#0" expanded="true" />
+                <element signature="e#5261#5617#0" expanded="true" />
+                <element signature="e#6132#6270#0" expanded="true" />
+                <element signature="e#6403#6557#0" expanded="true" />
+                <element signature="e#7542#7956#0" expanded="true" />
+                <element signature="e#9350#10548#0" expanded="true" />
+                <element signature="e#10613#12949#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Adapters.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Adapters.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="-23.714285" vertical-offset="2141" max-vertical-offset="2907">
+              <caret line="498" column="0" selection-start-line="498" selection-start-column="0" selection-end-line="498" selection-end-column="0" />
+              <folding>
+                <element signature="e#310#333#0" expanded="true" />
+                <element signature="e#407#870#0" expanded="false" />
+                <element signature="e#918#3983#0" expanded="false" />
+                <element signature="e#4021#5357#0" expanded="false" />
+                <element signature="e#4078#5357#0" expanded="true" />
+                <element signature="e#5397#8748#0" expanded="false" />
+                <element signature="e#5454#5606#0" expanded="true" />
+                <element signature="e#5655#6692#0" expanded="true" />
+                <element signature="e#8788#11838#0" expanded="false" />
+                <element signature="e#11914#12035#0" expanded="true" />
+                <element signature="e#13134#13948#0" expanded="true" />
+                <element signature="e#14052#15392#0" expanded="true" />
+                <element signature="e#15449#15824#0" expanded="true" />
+                <element signature="e#15872#17095#0" expanded="true" />
+                <element signature="e#17141#18201#0" expanded="true" />
+                <element signature="e#18263#18788#0" expanded="true" />
+                <element signature="e#18823#19823#0" expanded="false" />
+                <element signature="e#19010#19260#0" expanded="true" />
+                <element signature="e#19309#19350#0" expanded="true" />
+                <element signature="e#19396#19436#0" expanded="true" />
+                <element signature="e#19477#19512#0" expanded="true" />
+                <element signature="e#19556#19594#0" expanded="true" />
+                <element signature="e#19638#19676#0" expanded="true" />
+                <element signature="e#19717#19745#0" expanded="true" />
+                <element signature="e#19788#19823#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="FixPacakge.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/FixPacakge.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0" vertical-offset="306" max-vertical-offset="1853">
+              <caret line="53" column="41" selection-start-line="53" selection-start-column="41" selection-end-line="53" selection-end-column="41" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
+  </component>
+  <component name="FindManager">
+    <FindUsagesManager>
+      <setting name="OPEN_NEW_TAB" value="true" />
+    </FindUsagesManager>
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="changedFiles">
+      <list>
+        <option value="$PROJECT_DIR$/ConfClass.py" />
+        <option value="$PROJECT_DIR$/PkgUtil.py" />
+        <option value="$PROJECT_DIR$/Adapters.py" />
+        <option value="$PROJECT_DIR$/FixPacakge.py" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectFrameBounds">
+    <option name="width" value="1280" />
+    <option name="height" value="728" />
+  </component>
+  <component name="ProjectInspectionProfilesVisibleTreeState">
+    <entry key="Project Default">
+      <profile-state>
+        <expanded-state>
+          <State>
+            <id />
+          </State>
+        </expanded-state>
+        <selected-state>
+          <State>
+            <id>Buildout</id>
+          </State>
+        </selected-state>
+      </profile-state>
+    </entry>
+  </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="false">
+    <OptionsSetting value="true" id="Add" />
+    <OptionsSetting value="true" id="Remove" />
+    <OptionsSetting value="true" id="Checkout" />
+    <OptionsSetting value="true" id="Update" />
+    <OptionsSetting value="true" id="Status" />
+    <OptionsSetting value="true" id="Edit" />
+    <ConfirmationsSetting value="0" id="Add" />
+    <ConfirmationsSetting value="0" id="Remove" />
+  </component>
+  <component name="ProjectReloadState">
+    <option name="STATE" value="0" />
+  </component>
+  <component name="ProjectView">
+    <navigator currentView="ProjectPane" proportions="" version="1">
+      <flattenPackages />
+      <showMembers />
+      <showModules />
+      <showLibraryContents />
+      <hideEmptyPackages />
+      <abbreviatePackageNames />
+      <autoscrollToSource />
+      <autoscrollFromSource />
+      <sortByType />
+    </navigator>
+    <panes>
+      <pane id="Scope" />
+      <pane id="ProjectPane">
+        <subPane>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="FixPackage" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="FixPackage" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="FixPackage" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+        </subPane>
+      </pane>
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="options.lastSelected" value="Errors" />
+    <property name="options.splitter.main.proportions" value="0.3" />
+    <property name="options.splitter.details.proportions" value="0.2" />
+    <property name="options.searchVisible" value="true" />
+    <property name="recentsLimit" value="5" />
+  </component>
+  <component name="PyConsoleOptionsProvider">
+    <option name="myPythonConsoleState">
+      <console-settings />
+    </option>
+  </component>
+  <component name="RunManager" selected="Python.FixPacakge">
+    <configuration default="false" name="FixPacakge" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="FixPackage" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/FixPacakge.py" />
+      <option name="PARAMETERS" value="" />
+      <RunnerSettings RunnerId="PythonRunner" />
+      <ConfigurationWrapper RunnerId="PythonRunner" />
+      <method />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="py.test">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="FixPackage" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <option name="testToRun" value="" />
+      <option name="keywords" value="" />
+      <option name="params" value="" />
+      <option name="USE_PARAM" value="false" />
+      <option name="USE_KEYWORD" value="false" />
+      <method />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Nosetests">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="FixPackage" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <option name="PARAMS" value="" />
+      <option name="USE_PARAM" value="false" />
+      <method />
+    </configuration>
+    <configuration default="true" type="PythonConfigurationType" factoryName="Python">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="FixPackage" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="PARAMETERS" value="" />
+      <method />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Unittests">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="FixPackage" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <option name="PUREUNITTEST" value="true" />
+      <option name="PARAMS" value="" />
+      <option name="USE_PARAM" value="false" />
+      <method />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Doctests">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="FixPackage" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <method />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Attests">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="FixPackage" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <method />
+    </configuration>
+    <list size="1">
+      <item index="0" class="java.lang.String" itemvalue="Python.FixPacakge" />
+    </list>
+    <recent_temporary>
+      <list size="1">
+        <item index="0" class="java.lang.String" itemvalue="Python.FixPacakge" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="ShelveChangesManager" show_recycled="false" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="112c7b8f-1379-471a-95bc-c581c7f73d15" name="Default" comment="" />
+      <created>1403522352332</created>
+      <updated>1403522352332</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="0" y="0" width="1280" height="728" extended-state="0" />
+    <editor active="true" />
+    <layout>
+      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.14952531" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="true" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.16625" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.2467742" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+    </layout>
+  </component>
+  <component name="Vcs.Log.UiProperties">
+    <option name="RECENTLY_FILTERED_USER_GROUPS">
+      <collection />
+    </option>
+    <option name="RECENTLY_FILTERED_BRANCH_GROUPS">
+      <collection />
+    </option>
+  </component>
+  <component name="VcsContentAnnotationSettings">
+    <option name="myLimit" value="2678400000" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="myTodoPanelSettings">
+      <TodoPanelSettings />
+    </option>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <option name="time" value="7" />
+    </breakpoint-manager>
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/ConfClass.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2856">
+          <caret line="70" column="13" selection-start-line="70" selection-start-column="13" selection-end-line="70" selection-end-column="13" />
+          <folding>
+            <element signature="e#156#2105#0" expanded="false" />
+            <element signature="e#2137#5148#0" expanded="false" />
+            <element signature="e#2215#2379#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/PkgUtil.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="595" max-vertical-offset="3740">
+          <caret line="36" column="0" selection-start-line="36" selection-start-column="0" selection-end-line="36" selection-end-column="0" />
+          <folding>
+            <element signature="e#24#38#0" expanded="true" />
+            <element signature="e#171#1174#0" expanded="false" />
+            <element signature="e#217#347#0" expanded="true" />
+            <element signature="e#379#405#0" expanded="true" />
+            <element signature="e#440#459#0" expanded="true" />
+            <element signature="e#493#575#0" expanded="true" />
+            <element signature="e#619#646#0" expanded="true" />
+            <element signature="e#689#748#0" expanded="true" />
+            <element signature="e#783#844#0" expanded="true" />
+            <element signature="e#895#1094#0" expanded="true" />
+            <element signature="e#1142#1174#0" expanded="true" />
+            <element signature="e#1204#3470#0" expanded="false" />
+            <element signature="e#1232#1244#0" expanded="true" />
+            <element signature="e#1696#1766#0" expanded="true" />
+            <element signature="e#3600#3713#0" expanded="true" />
+            <element signature="e#3757#3902#0" expanded="true" />
+            <element signature="e#3946#4219#0" expanded="true" />
+            <element signature="e#4262#4435#0" expanded="true" />
+            <element signature="e#4479#4505#0" expanded="true" />
+            <element signature="e#4540#4558#0" expanded="true" />
+            <element signature="e#5261#5617#0" expanded="true" />
+            <element signature="e#6132#6270#0" expanded="true" />
+            <element signature="e#6403#6557#0" expanded="true" />
+            <element signature="e#7542#7956#0" expanded="true" />
+            <element signature="e#9350#10548#0" expanded="true" />
+            <element signature="e#10613#12949#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Adapters.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="2261" max-vertical-offset="5015">
+          <caret line="133" column="13" selection-start-line="133" selection-start-column="8" selection-end-line="133" selection-end-column="13" />
+          <folding>
+            <element signature="e#310#333#0" expanded="true" />
+            <element signature="e#407#870#0" expanded="false" />
+            <element signature="e#918#3983#0" expanded="false" />
+            <element signature="e#4021#5357#0" expanded="false" />
+            <element signature="e#4078#5357#0" expanded="true" />
+            <element signature="e#5397#8748#0" expanded="false" />
+            <element signature="e#5454#5606#0" expanded="true" />
+            <element signature="e#5655#6692#0" expanded="true" />
+            <element signature="e#8788#11838#0" expanded="false" />
+            <element signature="e#11914#12035#0" expanded="true" />
+            <element signature="e#13134#13948#0" expanded="true" />
+            <element signature="e#14052#15392#0" expanded="true" />
+            <element signature="e#15449#15824#0" expanded="true" />
+            <element signature="e#15872#17095#0" expanded="true" />
+            <element signature="e#17141#18201#0" expanded="true" />
+            <element signature="e#18263#18788#0" expanded="true" />
+            <element signature="e#18823#19823#0" expanded="false" />
+            <element signature="e#19010#19260#0" expanded="true" />
+            <element signature="e#19309#19350#0" expanded="true" />
+            <element signature="e#19396#19436#0" expanded="true" />
+            <element signature="e#19477#19512#0" expanded="true" />
+            <element signature="e#19556#19594#0" expanded="true" />
+            <element signature="e#19638#19676#0" expanded="true" />
+            <element signature="e#19717#19745#0" expanded="true" />
+            <element signature="e#19788#19823#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/FixPacakge.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="668" max-vertical-offset="2278">
+          <caret line="85" column="23" selection-start-line="85" selection-start-column="23" selection-end-line="85" selection-end-column="23" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/FixPacakge.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="459" max-vertical-offset="799">
+          <caret line="27" column="26" selection-start-line="27" selection-start-column="26" selection-end-line="27" selection-end-column="26" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ConfClass.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="136" max-vertical-offset="2822">
+          <caret line="8" column="60" selection-start-line="8" selection-start-column="51" selection-end-line="8" selection-end-column="60" />
+          <folding>
+            <element signature="e#156#2105#0" expanded="false" />
+            <element signature="e#2137#5148#0" expanded="false" />
+            <element signature="e#2215#2379#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/PkgUtil.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="126" max-vertical-offset="2142">
+          <caret line="23" column="0" selection-start-line="23" selection-start-column="0" selection-end-line="23" selection-end-column="0" />
+          <folding>
+            <element signature="e#24#38#0" expanded="true" />
+            <element signature="e#171#1174#0" expanded="false" />
+            <element signature="e#217#347#0" expanded="true" />
+            <element signature="e#379#405#0" expanded="true" />
+            <element signature="e#440#459#0" expanded="true" />
+            <element signature="e#493#575#0" expanded="true" />
+            <element signature="e#619#646#0" expanded="true" />
+            <element signature="e#689#748#0" expanded="true" />
+            <element signature="e#783#844#0" expanded="true" />
+            <element signature="e#895#1094#0" expanded="true" />
+            <element signature="e#1142#1174#0" expanded="true" />
+            <element signature="e#1204#3470#0" expanded="false" />
+            <element signature="e#1232#1244#0" expanded="true" />
+            <element signature="e#1696#1766#0" expanded="true" />
+            <element signature="e#3600#3713#0" expanded="true" />
+            <element signature="e#3757#3902#0" expanded="true" />
+            <element signature="e#3946#4219#0" expanded="true" />
+            <element signature="e#4262#4435#0" expanded="true" />
+            <element signature="e#4479#4505#0" expanded="true" />
+            <element signature="e#4540#4558#0" expanded="true" />
+            <element signature="e#5261#5617#0" expanded="true" />
+            <element signature="e#6132#6270#0" expanded="true" />
+            <element signature="e#6403#6557#0" expanded="true" />
+            <element signature="e#7542#7956#0" expanded="true" />
+            <element signature="e#9350#10548#0" expanded="true" />
+            <element signature="e#10613#12949#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Adapters.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="3538" max-vertical-offset="4097">
+          <caret line="235" column="0" selection-start-line="235" selection-start-column="0" selection-end-line="235" selection-end-column="0" />
+          <folding>
+            <element signature="e#310#333#0" expanded="true" />
+            <element signature="e#407#870#0" expanded="false" />
+            <element signature="e#918#3983#0" expanded="false" />
+            <element signature="e#4021#5357#0" expanded="false" />
+            <element signature="e#4078#5357#0" expanded="true" />
+            <element signature="e#5397#8748#0" expanded="false" />
+            <element signature="e#5454#5606#0" expanded="true" />
+            <element signature="e#5655#6692#0" expanded="true" />
+            <element signature="e#8788#11838#0" expanded="false" />
+            <element signature="e#11914#12035#0" expanded="true" />
+            <element signature="e#13134#13948#0" expanded="true" />
+            <element signature="e#14052#15392#0" expanded="true" />
+            <element signature="e#15449#15824#0" expanded="true" />
+            <element signature="e#15872#17095#0" expanded="true" />
+            <element signature="e#17141#18201#0" expanded="true" />
+            <element signature="e#18263#18788#0" expanded="true" />
+            <element signature="e#18823#19823#0" expanded="false" />
+            <element signature="e#19010#19260#0" expanded="true" />
+            <element signature="e#19309#19350#0" expanded="true" />
+            <element signature="e#19396#19436#0" expanded="true" />
+            <element signature="e#19477#19512#0" expanded="true" />
+            <element signature="e#19556#19594#0" expanded="true" />
+            <element signature="e#19638#19676#0" expanded="true" />
+            <element signature="e#19717#19745#0" expanded="true" />
+            <element signature="e#19788#19823#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/FixPacakge.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="350" max-vertical-offset="1190">
+          <caret line="64" column="0" selection-start-line="64" selection-start-column="0" selection-end-line="64" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Python27/Lib/re.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="2143" max-vertical-offset="3383">
+          <caret line="141" column="0" selection-start-line="141" selection-start-column="0" selection-end-line="141" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ConfClass.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="510">
+          <caret line="63" column="25" selection-start-line="63" selection-start-column="25" selection-end-line="63" selection-end-column="25" />
+          <folding>
+            <element signature="e#156#2105#0" expanded="false" />
+            <element signature="e#2137#5148#0" expanded="false" />
+            <element signature="e#2215#2379#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Adapters.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-23.714285" vertical-offset="2141" max-vertical-offset="2907">
+          <caret line="498" column="0" selection-start-line="498" selection-start-column="0" selection-end-line="498" selection-end-column="0" />
+          <folding>
+            <element signature="e#310#333#0" expanded="true" />
+            <element signature="e#407#870#0" expanded="false" />
+            <element signature="e#918#3983#0" expanded="false" />
+            <element signature="e#4021#5357#0" expanded="false" />
+            <element signature="e#4078#5357#0" expanded="true" />
+            <element signature="e#5397#8748#0" expanded="false" />
+            <element signature="e#5454#5606#0" expanded="true" />
+            <element signature="e#5655#6692#0" expanded="true" />
+            <element signature="e#8788#11838#0" expanded="false" />
+            <element signature="e#11914#12035#0" expanded="true" />
+            <element signature="e#13134#13948#0" expanded="true" />
+            <element signature="e#14052#15392#0" expanded="true" />
+            <element signature="e#15449#15824#0" expanded="true" />
+            <element signature="e#15872#17095#0" expanded="true" />
+            <element signature="e#17141#18201#0" expanded="true" />
+            <element signature="e#18263#18788#0" expanded="true" />
+            <element signature="e#18823#19823#0" expanded="false" />
+            <element signature="e#19010#19260#0" expanded="true" />
+            <element signature="e#19309#19350#0" expanded="true" />
+            <element signature="e#19396#19436#0" expanded="true" />
+            <element signature="e#19477#19512#0" expanded="true" />
+            <element signature="e#19556#19594#0" expanded="true" />
+            <element signature="e#19638#19676#0" expanded="true" />
+            <element signature="e#19717#19745#0" expanded="true" />
+            <element signature="e#19788#19823#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/FixPacakge.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="306" max-vertical-offset="1853">
+          <caret line="53" column="41" selection-start-line="53" selection-start-column="41" selection-end-line="53" selection-end-column="41" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/PkgUtil.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="1.214156" vertical-offset="147" max-vertical-offset="3077">
+          <caret line="136" column="0" selection-start-line="136" selection-start-column="0" selection-end-line="136" selection-end-column="0" />
+          <folding>
+            <element signature="e#24#38#0" expanded="true" />
+            <element signature="e#171#1174#0" expanded="false" />
+            <element signature="e#217#347#0" expanded="true" />
+            <element signature="e#379#405#0" expanded="true" />
+            <element signature="e#440#459#0" expanded="true" />
+            <element signature="e#493#575#0" expanded="true" />
+            <element signature="e#619#646#0" expanded="true" />
+            <element signature="e#689#748#0" expanded="true" />
+            <element signature="e#783#844#0" expanded="true" />
+            <element signature="e#895#1094#0" expanded="true" />
+            <element signature="e#1142#1174#0" expanded="true" />
+            <element signature="e#1204#3470#0" expanded="false" />
+            <element signature="e#1232#1244#0" expanded="true" />
+            <element signature="e#1696#1766#0" expanded="true" />
+            <element signature="e#3600#3713#0" expanded="true" />
+            <element signature="e#3757#3902#0" expanded="true" />
+            <element signature="e#3946#4219#0" expanded="true" />
+            <element signature="e#4262#4435#0" expanded="true" />
+            <element signature="e#4479#4505#0" expanded="true" />
+            <element signature="e#4540#4558#0" expanded="true" />
+            <element signature="e#5261#5617#0" expanded="true" />
+            <element signature="e#6132#6270#0" expanded="true" />
+            <element signature="e#6403#6557#0" expanded="true" />
+            <element signature="e#7542#7956#0" expanded="true" />
+            <element signature="e#9350#10548#0" expanded="true" />
+            <element signature="e#10613#12949#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+  </component>
+  <component name="masterDetails">
+    <states>
+      <state key="ScopeChooserConfigurable.UI">
+        <settings>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+    </states>
+  </component>
+</project>
+
