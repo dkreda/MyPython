@@ -84,8 +84,11 @@ def VerifySingleTone():
     print "Debug - VerifySingleTone Not ready Yet"
     Tmp=re.search(r'([^\/]+)$',__file__)
     BaseName=Tmp.group(1) if Tmp else None
-    Single=subprocess.check_output(["bash",'-c',r"ps -ef | grep %s | grep -v 'grep' | wc -l" % BaseName])
-    return int(Single) <= 1
+    if not os.name == "nt":
+        Single=subprocess.check_output(["bash",'-c',r"ps -ef | grep %s | grep -v 'grep' | wc -l" % BaseName])
+        return int(Single) <= 1
+    else:
+        return True
 
 def Validation(Conf):
     print "Debug - Validation is not ready yet ....."
@@ -170,10 +173,13 @@ def BuildHostList(Conf):
     Infos= InfoCollector(InfoDir) if os.path.isdir(InfoDir) else InfoPkgCollector(InfoDir)
     ### Go Over all the Info Files and save only the relevant
     for InfoName in Infos:
+        print "Debug - Checking Info %s" % InfoName
         TmpInfoConf=Infos[InfoName]
         ## Go Over all the CLI Selection parameter to verify if the Machine should do boot
         for ConfParam,Rec in HostSelectorMap.items():
             if ConfParam in Conf and Rec[0] in TmpInfoConf:
+                print "Debug - Checking if %s %s exists at %s (%s)" % \
+                (ConfParam,Conf[ConfParam],InfoName,(TmpInfoConf[Rec[0]]))
                 if TmpInfoConf[Rec[0]] in Conf[ConfParam]:
                     ## Verify Chassi Record already exists
                     ChIP=TmpInfoConf['chassis_ip']
@@ -293,6 +299,80 @@ class LastReboot(BaseState):
         return self._State
 
 
+class xBaseState(object):
+    def __init__(self,HwDriver,Blade,TimeOut=0,Retry=0,TimeWait=1,**Options):
+        self._Driver=HwDriver
+        self._Blade=Blade
+        self.__TimeOut=TimeOut
+        self.__Retry=Retry
+        self.__Wait=TimeWait
+        self._Conf=Options
+        #self.__doRun=self.doRun
+        #self.Test="Papa"
+
+    def doRun(self):
+        print "Debug - Orig Func !"
+        return True
+
+    def Next(self):
+        pass
+
+    def Run(self):
+        print "Debug - Run %s" % type(self)
+        Start=datetime.datetime.now().time()
+        Counter=1
+        TimeAcum=0
+        TimeStart=Start
+        while not self.doRun():
+            Current=datetime.datetime.now().time()
+            TimeLen= Current - TimeStart
+            TimeAcum += TimeLen
+            if self.__TimeOut:
+                if Current + TimeAcum/Counter + self.__Wait > Start + self.__TimeOut:
+                    print "Error - Time Out !!!!"
+                    return None
+                    break
+            Counter += 1
+            if self.__Retry and Counter > self.__Retry:
+                print "Error - No more retry available"
+                return None
+                break
+            time.sleep(self.__Wait)
+            TimeStart=datetime.datetime.now().time()
+        Tmp=threading.currentThread()
+        print "Info - Thread %s finished goto next state\n" % Tmp.name
+        return self.Next()
+
+class BootSeq(xBaseState):
+    #def __init__(self,HwDriver,Blade,TimeOut=0,Retry=0,TimeWait=1,**Options):
+    #    print "Debug - Init %s" % type(self)
+    #    super(BootSeq, self).__init__(HwDriver,Blade,TimeOut=0,Retry=0,TimeWait=1,**Options)
+    #    self.__doRun=self.doRun
+    #    self.Test="Hey Im BootSeq (Chiled)"
+
+    def doRun(self):
+        if 'Log' in self._Conf:
+            WrLog(self._Conf['Log'],"Executing bootlist change to %s" % self._Conf['Boot'])
+        print "Debug - Setting Boot Sequence ....."
+        TmpChk=self._Driver.setBootSeq(self._Conf['Boot'],self._Blade)
+        if TmpChk:
+            ### TO DO Change this to interactive request ...
+            print "Error - Failed to change Boot sequence Slot %s" % self._Blade
+            print "\t %s" % TmpChk
+            print " do you want to continue ???????????"
+            return False
+        return True
+
+    def Next(self):
+        Tmp=threading.currentThread()
+        print "Debug - Thread %s in Finished BootSeq ... setting nextState" % Tmp.name
+        return BladeRestart(self._Driver,self._Blade,180,TimeWait=5)
+
+class BladeRestart(xBaseState):
+    pass
+
+
+
 class SingleBlade(object):
     _StateMap={}
     def __init__(self,BladeRec,Conf,State="Init"):
@@ -332,7 +412,7 @@ class SingleBlade(object):
         self.State="Power On"
 
     def _ChkAnaconda(self):
-        #print "Debug - Check Anaconda installation Status at %s" % self.Blade['mgmt_ip']
+        print "Debug - Check Anaconda installation Status at %s" % self.Blade['mgmt_ip']
         ClearSSHFingerPrint(self.Blade['mgmt_ip'])
         ChkObj=Adapters.RemoteRunner(self.Blade['mgmt_ip'],"root","flashnetworks",Mode=Adapters.RunnerDecorator.Mode_Login,Prompt=r'#')
         Lines=ChkObj.RunCmds(ChkObj,["tail -3 /tmp/anaconda.log"])
@@ -355,9 +435,15 @@ class SingleBlade(object):
         return not os.system("ping -c 2 -W 3 %s 2>&1 > /dev/nul" % IP)
 
     def getState(self):
+        print "Debug - Check State thread ???"
         return self.State
 
     def RunPXEProcess(self):
+        if self.State == "Test":
+            Tmp=BootSeq(self.Blade['Driver'],self.Blade['chassis_slot_number'],20)
+            while Tmp:
+                Tmp=Tmp.Run()
+            return
         if not self._ChkBootSeq(Adapters.Boot_PXE):
             raise Exception("Fail to change Boot sequence to %s at slot %s" % (self.Blade['mgmt_ip'],self.Blade['chassis_slot_number']))
         self._Restart()
@@ -470,7 +556,14 @@ def Th_Blade(State,Blade):
                'Last Reset' : LastReboot
              }
     if not State in StateMap:
-        raise Exception("Error - Unknown State %s" % State)
+        if State == 'Test':
+            MyBlade=BootSeq(Blade['Driver'],Blade['chassis_slot_number'],30,Boot=Adapters.Boot_PXE)
+            while MyBlade:
+                MyBlade=MyBlade.Run()
+            State="Finshed O.K"
+        else:
+            Tid=threading.currentThread()
+            raise Exception("Error - Thread %s Unknown State %s" % (Tid.name,State))
     while not State ==  "Finshed O.K":
         MyBlade=StateMap[State](Blade)
         State = MyBlade.RunState()
@@ -487,13 +580,17 @@ def Th_ChangeBootSeq(BootSeq,Driver,*BladeRec):
     #SlotList=[Blade['chassis_slot_number'] for Blade in BladeRec]
     #Driver=Adapters.MachineManage()
     Results=Driver.setBootSeq(BootSeq,*SlotList.keys())
+    print "\n\n\n\n************************************************"
+    print "Going to start threads ............. ******"
+    print "\n*****************************************************\n\n\n\n"
+    time.sleep(3)
     ThreadPool=[]
     if len(SlotList) < 2 : Results={ BladeRec[0]['chassis_slot_number'] : Results }
     for Slot,Status in Results.items():
         if not Status:
             ThreadPool.append(threading.Thread(target=Th_Blade,
                                                name="ThBlade_%s_Slot_%s" % (SlotList[Slot]['mgmt_ip'],SlotList[Slot]['chassis_slot_number']) ,
-                                               args=('BootStart First',SlotList[Slot],)
+                                               args=("Test" if os.name == 'nt' else 'BootStart First',SlotList[Slot],)
             ))
             TmpTime=datetime.datetime.now().time()
             print "Debug %s - Start Thread %s" % (TmpTime,ThreadPool[-1].getName())
@@ -519,7 +616,8 @@ def Th_ChangeBootSeq(BootSeq,Driver,*BladeRec):
 
 def ChassiOp(ChRec):
     #ChRec=
-    HwType=Adapters.CheckHardware(ChRec['chassis_ip'],ChRec['user_name'],ChRec['password'])
+    HwType="TestRunner" if os.name == 'nt' and 'Debug' in FullConfig else \
+        Adapters.CheckHardware(ChRec['chassis_ip'],ChRec['user_name'],ChRec['password'])
     if HwType:
         ##ChRec['HW']=HwType
         Driver=Adapters.MachineManage(HwType,ChRec['chassis_ip'],ChRec['user_name'],ChRec['password'])
@@ -632,7 +730,7 @@ for ChNode,ChRec in ChassiRec.items():
     PIdList[ChNode].start()
 
 Flag=1
-TimeOut=3000
+TimeOut=30
 print "DEBUG - !!!!  Start Loop at the MAIN CORE Thread !!!!!!!!!!!!!!!!"
 while Flag and TimeOut:
     Flag=0
@@ -645,7 +743,11 @@ while Flag and TimeOut:
                 print "Debug -- MAIN MAIN Process Detected that %s still Running" % Pid.getName()
     if Flag:
         time.sleep(1)
+        if not TimeOut % 10:
+            print "Debug - MAIN Process !!! - will wait %d second more" % TimeOut
+
 
 
 if not TimeOut:
     raise Exception("Error    -    Program TimeOut !!!!!")
+
