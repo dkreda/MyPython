@@ -120,9 +120,12 @@ class TargetZip(object):
         BufSize=65536 if os.path.getsize(Buffer.name) > (1024 * 1024 * 50) else -1
         Line=True
         ChkSum=hashlib.md5()
+        Acum=0
         while Line:
-            Line=Buffer.read(BufSize)
-            ChkSum.update(Line)
+            Line=Buffer.read(BufSize,"rb")
+            if len(Line): ChkSum.update(Line)
+            Acum += len(Line)
+            print "Debug - Read %12d (%s)" % (Acum,type(Line))
         Buffer.close()
         Buffer=open("%s.md5" % self.ZipName,"w")
         Buffer.write("%s  %s" % (ChkSum.hexdigest(),self.ZipName))
