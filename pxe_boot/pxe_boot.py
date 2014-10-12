@@ -99,6 +99,115 @@ def Validation(Conf):
         Active=False if subprocess.call([r'ifconfig',r'-a | grep %s' % InfoCfg['ems_ip']]) else True
     return True
 
+def BuildHostList(Conf):
+                       ## Map content
+                       ## Key  : [Info Param, identifier]
+    HostSelectorMap = { 'ip'   : ['mgmt_ip','mgmt_ip'] ,
+                        'role' : ['server_role','mgmt_ip'] ,
+                        'hostname' : ['server_name','server_name'] ,
+                        'slot' : ['chassis_slot_number','mgmt_ip'] }
+    Result={}
+    print "Build HostList not ready yet ...."
+    InfoDir=Conf['new_info_dir'][-1] if 'new_info_dir' in Conf else "/tftpboot/INFO_FILES"
+    Infos= InfoCollector(InfoDir) if os.path.isdir(InfoDir) else InfoPkgCollector(InfoDir)
+    ### Go Over all the Info Files and save only the relevant
+    for InfoName in Infos:
+        print "Debug - Checking Info %s" % InfoName
+        TmpInfoConf=Infos[InfoName]
+        ## Go Over all the CLI Selection parameter to verify if the Machine should do boot
+        for ConfParam,Rec in HostSelectorMap.items():
+            if ConfParam in Conf and Rec[0] in TmpInfoConf:
+                print "Debug - Checking if %s %s exists at %s (%s)" % \
+                (ConfParam,Conf[ConfParam],InfoName,(TmpInfoConf[Rec[0]]))
+                if TmpInfoConf[Rec[0]] in Conf[ConfParam]:
+                    ## Verify Chassi Record already exists
+                    ChIP=TmpInfoConf['chassis_ip']
+                    if not ChIP in Result:
+                        Result[ChIP]=Infos['_'.join(("INFO",ChIP,))]
+                    TmpInfoConf['Identifier']=TmpInfoConf[Rec[1]]
+                    Result[ChIP][TmpInfoConf['mgmt_ip']]=TmpInfoConf
+    ## Just for Debug or user interface:
+    HostList=[]
+    for ChassiRec in Result.values():
+        for KeyName,Rec in ChassiRec.items():
+            if re.match(r'(\d+\.){3}\d+',KeyName):
+                HostList.append(Rec['Identifier'])
+    print "\nThe following servers will be reboot:\n\t%s" % " ".join(HostList)
+    return Result
+
+def ParseInfo(*Content):
+    Result={}
+    for Line in Content:
+        MatchObj=ParamLine.search(Line)
+        if MatchObj:
+            Result[MatchObj.group(1)]=MatchObj.group(2)
+    return Result
+
+def ParseInfoFile(FileName):
+    FObj=file(FileName,'r')
+    Buffer=FObj.readlines()
+    FObj.close()
+    return ParseInfo(*Buffer)
+
+def WrLog(FileName,*Messages):
+    FObj=file(FileName,'a')
+    FObj.writelines([ "%s\n" % Line for Line in Messages])
+    FObj.close()
+
+def ClearSSHFingerPrint(Ip):
+    SShFile="/root/.ssh/known_hosts"
+    FObj=file(SShFile,'r')
+    Lines=FObj.readlines()
+    FObj.close()
+    NewLines=[]
+    for Line in Lines:
+        if re.match(r"%s\s" % Ip,Line): continue
+        NewLines.append(Line)
+    FObj=file(SShFile,'w')
+    FObj.writelines(NewLines)
+    FObj.close()
+
+def CheckConnection(IP,TimeOut=3):
+    PingCmd='ping -n 2 -w %d %s > nul' if os.name == 'nt' else "ping -c 2 -W %d %s 2>&1 > /dev/nul"
+    return os.system(PingCmd % (TimeOut,IP))
+#        return not os.system("ping -c 2 -W %d %s 2>&1 > /dev/nul" % (TimeOut,IP))
+
+def WaitResetStart(Blade):
+    TimeOut=datetime.datetime.now().time()
+    TimeOut=datetime.timedelta(hours=TimeOut.hour,seconds=TimeOut.second,minutes=TimeOut.minute)
+    TimeOut=datetime.timedelta(seconds=TimeOut.seconds + 30)
+    IP=Blade['mgmt_ip']
+    ConnState = CheckConnection(IP)
+    ## Verify offline or wait period time
+    print "Debug - Verify offline at Blade %s (slot %s) Connection State is %s" % (IP,Blade['chassis_slot_number'],ConnState)
+    while ( not Blade['Driver'].is_PowerOff(Blade['chassis_slot_number']) and not operator.xor(ConnState,CheckConnection(IP))):
+        Perioud=datetime.datetime.now().time()
+        Perioud=datetime.timedelta(hours=Perioud.hour,seconds=Perioud.second,minutes=Perioud.minute)
+        if Perioud > TimeOut:
+            print "Debug - offLine Verification timeout Blade %s (slot %s)" % (IP,Blade['chassis_slot_number'])
+            print "Debug - Blade offline Verification Results:\n\tPower off State %s\n\tConnectivity %s\n\tConnection State %s" % \
+                    (Blade['Driver'].is_PowerOff(Blade['chassis_slot_number']),CheckConnection(IP),ConnState)
+            break
+        time.sleep(1)
+    print "Debug - Assume offline at Blade %s (slot %s)" % (IP,Blade['chassis_slot_number'])
+    ### Verify the Blade is up again
+    while ( Blade['Driver'].is_PowerOff(Blade['chassis_slot_number']) or not CheckConnection(IP) ):
+        print "Debug - Blade still down ...."
+        time.sleep(1)
+
+def CheckAnaconda(Blade):
+    ClearSSHFingerPrint(Blade['mgmt_ip'])
+    ChkObj=Adapters.RemoteRunner(Blade['mgmt_ip'],"root","flashnetworks",Mode=Adapters.RunnerDecorator.Mode_Login,Prompt=r'#')
+    Lines=ChkObj.RunCmds(ChkObj,["tail -3 /tmp/anaconda.log"])
+    Count=0
+    for Line in Lines:
+        if re.search("Connection refused",Line) : return False
+        if re.match(r'[\d:,]+\s+\S+\s+:',Line): Count +=1
+    if not Count:
+        print "Debug - Anaconda Check of Blade %s:" % Blade['mgmt_ip']
+        print Lines
+    return True if Count else False
+
 class InfoCollector(object):
     InfoPattern=re.compile(r'INFO_(\d+\.){3}\d+')
     def __init__(self,InfoPath):
@@ -160,146 +269,16 @@ class InfoPkgCollector(InfoCollector):
         raise Exception("Error %s is not part of info collection (at Package %s)" % (Name,self.Pkg.filename))
 
 
-def BuildHostList(Conf):
-                       ## Map content
-                       ## Key  : [Info Param, identifier]
-    HostSelectorMap = { 'ip'   : ['mgmt_ip','mgmt_ip'] ,
-                        'role' : ['server_role','mgmt_ip'] ,
-                        'hostname' : ['server_name','server_name'] ,
-                        'slot' : ['chassis_slot_number','mgmt_ip'] }
-    Result={}
-    print "Build HostList not ready yet ...."
-    InfoDir=Conf['new_info_dir'][-1] if 'new_info_dir' in Conf else "/tftpboot/INFO_FILES"
-    Infos= InfoCollector(InfoDir) if os.path.isdir(InfoDir) else InfoPkgCollector(InfoDir)
-    ### Go Over all the Info Files and save only the relevant
-    for InfoName in Infos:
-        print "Debug - Checking Info %s" % InfoName
-        TmpInfoConf=Infos[InfoName]
-        ## Go Over all the CLI Selection parameter to verify if the Machine should do boot
-        for ConfParam,Rec in HostSelectorMap.items():
-            if ConfParam in Conf and Rec[0] in TmpInfoConf:
-                print "Debug - Checking if %s %s exists at %s (%s)" % \
-                (ConfParam,Conf[ConfParam],InfoName,(TmpInfoConf[Rec[0]]))
-                if TmpInfoConf[Rec[0]] in Conf[ConfParam]:
-                    ## Verify Chassi Record already exists
-                    ChIP=TmpInfoConf['chassis_ip']
-                    if not ChIP in Result:
-                        Result[ChIP]=Infos['_'.join(("INFO",ChIP,))]
-                    TmpInfoConf['Identifier']=TmpInfoConf[Rec[1]]
-                    Result[ChIP][TmpInfoConf['mgmt_ip']]=TmpInfoConf
-    ## Just for Debug or user interface:
-    HostList=[]
-    for ChassiRec in Result.values():
-        for KeyName,Rec in ChassiRec.items():
-            if re.match(r'(\d+\.){3}\d+',KeyName):
-                HostList.append(Rec['Identifier'])
-    print "\nThe following servers will be reboot:\n\t%s" % " ".join(HostList)
-    return Result
 
-
-def ParseInfo(*Content):
-    Result={}
-    for Line in Content:
-        MatchObj=ParamLine.search(Line)
-        if MatchObj:
-            Result[MatchObj.group(1)]=MatchObj.group(2)
-    return Result
-
-def ParseInfoFile(FileName):
-    FObj=file(FileName,'r')
-    Buffer=FObj.readlines()
-    FObj.close()
-    return ParseInfo(*Buffer)
-
-def WrLog(FileName,*Messages):
-    FObj=file(FileName,'a')
-    FObj.writelines([ "%s\n" % Line for Line in Messages])
-    FObj.close()
-
-def ClearSSHFingerPrint(Ip):
-    SShFile="/root/.ssh/known_hosts"
-    FObj=file(SShFile,'r')
-    Lines=FObj.readlines()
-    FObj.close()
-    NewLines=[]
-    for Line in Lines:
-        if re.match(r"%s\s" % Ip,Line): continue
-        NewLines.append(Line)
-    FObj=file(SShFile,'w')
-    FObj.writelines(NewLines)
-    FObj.close()
-
-def CheckConnection(IP,TimeOut=3):
-        return not os.system("ping -c 2 -W %d %s 2>&1 > /dev/nul" % (TimeOut,IP))
-
-def WaitResetStart(Blade):
-    TimeOut=datetime.datetime.now().time()
-    TimeOut=datetime.timedelta(hours=TimeOut.hour,seconds=TimeOut.second,minutes=TimeOut.minute)
-    TimeOut=datetime.timedelta(seconds=TimeOut.seconds + 30)
-    IP=Blade['mgmt_ip']
-    ConnState = CheckConnection(IP)
-    ## Verify offline or wait period time
-    print "Debug - Verify offline at Blade %s (slot %s) Connection State is %s" % (IP,Blade['chassis_slot_number'],ConnState)
-    while ( not Blade['Driver'].is_PowerOff(Blade['chassis_slot_number']) and not operator.xor(ConnState,CheckConnection(IP))):
-        Perioud=datetime.datetime.now().time()
-        Perioud=datetime.timedelta(hours=Perioud.hour,seconds=Perioud.second,minutes=Perioud.minute)
-        if Perioud > TimeOut:
-            print "Debug - offLine Verification timeout Blade %s (slot %s)" % (IP,Blade['chassis_slot_number'])
-            print "Debug - Blade offline Verification Results:\n\tPower off State %s\n\tConnectivity %s\n\tConnection State %s" % \
-                    (Blade['Driver'].is_PowerOff(Blade['chassis_slot_number']),CheckConnection(IP),ConnState)
-            break
-        time.sleep(1)
-    print "Debug - Assume offline at Blade %s (slot %s)" % (IP,Blade['chassis_slot_number'])
-    ### Verify the Blade is up again
-    while ( Blade['Driver'].is_PowerOff(Blade['chassis_slot_number']) or not CheckConnection(IP) ):
-        time.sleep(1)
-
-def CheckAnaconda(Blade):
-    ClearSSHFingerPrint(Blade['mgmt_ip'])
-    ChkObj=Adapters.RemoteRunner(Blade['mgmt_ip'],"root","flashnetworks",Mode=Adapters.RunnerDecorator.Mode_Login,Prompt=r'#')
-    Lines=ChkObj.RunCmds(ChkObj,["tail -3 /tmp/anaconda.log"])
-    Count=0
-    for Line in Lines:
-        if re.search("Connection refused",Line) : return False
-        if re.match(r'[\d:,]+\s+\S+\s+:',Line): Count +=1
-    if not Count:
-        print "Debug - Anaconda Check of Blade %s:" % Blade['mgmt_ip']
-        print Lines
-    return True if Count else False
-
-class BaseState(object):
-    def __init__(self,Blade):
-        self.Blade=Blade
-
-    def getNext(self,Input):
-        pass
-
-    def State(self):
-        return "Base"
-
-    def RunState(self):
-        pass
-
-class LastReboot(BaseState):
-    """ This is the Last in the PXE Installation it waits till the Machine is avialable
-        after reboot.
-    """
-    def __init__(self,Blade):
-        super(LastReboot,self).__init__(Blade)
-        self._State="Last Reset"
-
-    def State(self):
-        return self._State
-
-    def RunState(self):
-        WaitResetStart(self.Blade)
-        while not CheckConnection(self.Blade['mgmt_ip']):
-            time.sleep(5)
-        self._State="Finshed O.K"
-        return self._State
 
 
 class xBaseState(object):
+    #####################################
+    # This class should be used as state machine
+    # Just overwrite doRun and Next methods
+    # - doRun - return Boolean (True - go next state
+    #                           False - retry)
+    # - Next - return the next state type to run !
     def __init__(self,HwDriver,Blade,TimeOut=0,Retry=0,TimeWait=1,**Options):
         self._Driver=HwDriver
         self._Blade=Blade
@@ -310,6 +289,11 @@ class xBaseState(object):
         #self.__doRun=self.doRun
         #self.Test="Papa"
 
+    def LogStr(self,*Messages):
+        Current=datetime.datetime.now().time()
+        ThName=threading.currentThread()
+        return ["%s - Thread %-20s: %s" % (Current,ThName.name,Iter) for Iter in Messages ]
+
     def doRun(self):
         print "Debug - Orig Func !"
         return True
@@ -318,14 +302,14 @@ class xBaseState(object):
         pass
 
     def Run(self):
-        print "Debug - Run %s" % type(self)
+        #print "Debug - Run %s" % type(self)
         Start=datetime.datetime.now().time()
         Counter=1
         TimeAcum=0
         TimeStart=Start
         while not self.doRun():
             Current=datetime.datetime.now().time()
-            TimeLen= Current - TimeStart
+            TimeLen= DtToInt(Current) - DtToInt(TimeStart)
             TimeAcum += TimeLen
             if self.__TimeOut:
                 if Current + TimeAcum/Counter + self.__Wait > Start + self.__TimeOut:
@@ -339,25 +323,25 @@ class xBaseState(object):
                 break
             time.sleep(self.__Wait)
             TimeStart=datetime.datetime.now().time()
-        Tmp=threading.currentThread()
-        print "Info - Thread %s finished goto next state\n" % Tmp.name
+        #Tmp=threading.currentThread()
+        #print "Info - Thread %s finished goto next state\n" % Tmp.name
+        TimeStart=datetime.datetime.now().time()
+        print "\n".join(self.LogStr("Info  - Last State took %d" % (DtToInt(TimeStart) - DtToInt(Start)),
+                                    "Debug - Time Start %d , Start %d" % (DtToInt(TimeStart),DtToInt(Start)) ,
+                                    "Info  - Progress to next State"))
         return self.Next()
 
 class BootSeq(xBaseState):
-    #def __init__(self,HwDriver,Blade,TimeOut=0,Retry=0,TimeWait=1,**Options):
-    #    print "Debug - Init %s" % type(self)
-    #    super(BootSeq, self).__init__(HwDriver,Blade,TimeOut=0,Retry=0,TimeWait=1,**Options)
-    #    self.__doRun=self.doRun
-    #    self.Test="Hey Im BootSeq (Chiled)"
 
     def doRun(self):
         if 'Log' in self._Conf:
             WrLog(self._Conf['Log'],"Executing bootlist change to %s" % self._Conf['Boot'])
-        print "Debug - Setting Boot Sequence ....."
-        TmpChk=self._Driver.setBootSeq(self._Conf['Boot'],self._Blade)
+        print "\n%s\n" % "\n".join(self.LogStr("Debug - Setting Boot Sequence %s" % self._Conf['Boot'] ))
+        #print "Debug - Setting Boot Sequence ....."
+        TmpChk=self._Driver.setBootSeq(self._Conf['Boot'],self._Blade['chassis_slot_number'])
         if TmpChk:
             ### TO DO Change this to interactive request ...
-            print "Error - Failed to change Boot sequence Slot %s" % self._Blade
+            print "Error - Failed to change Boot sequence Slot %s" % self._Blade['chassis_slot_number']
             print "\t %s" % TmpChk
             print " do you want to continue ???????????"
             return False
@@ -365,12 +349,45 @@ class BootSeq(xBaseState):
 
     def Next(self):
         Tmp=threading.currentThread()
-        print "Debug - Thread %s in Finished BootSeq ... setting nextState" % Tmp.name
-        return BladeRestart(self._Driver,self._Blade,180,TimeWait=5)
+        #print "Debug - Thread %s in Finished BootSeq ... setting nextState" % Tmp.name
+        print "\n".join(self.LogStr("Debug - Change BootSeq succesfully"))
+        return BladeRestart(self._Driver,self._Blade,60,TimeWait=5)
 
 class BladeRestart(xBaseState):
-    pass
 
+    def doRun(self):
+        print "\nDebug Blade Type is %s" % type(self._Blade)
+        print "\nDebug Slot Number is %s" % self._Blade['chassis_slot_number']
+        self._Driver.doRestart(self._Blade['chassis_slot_number'])
+        print "\n".join(self.LogStr("Debug - Restart Blade at slot %s" % self._Blade['chassis_slot_number'] ))
+        return True
+
+    def Next(self):
+        return WaitOffline(self._Driver,self._Blade,30,TimeWait=5)
+
+class WaitOffline(xBaseState):
+    def doRun(self):
+        print "\n".join(self.LogStr("Debug - Validate offline"))
+        ConnState = CheckConnection(self._Blade['mgmt_ip'])
+        ## Verify offline or wait period time
+        #print "Debug - Verify offline at Blade %s (slot %s) Connection State is %s" % (IP,Blade['chassis_slot_number'],ConnState)
+        return self._Driver.is_PowerOff(self._Blade['chassis_slot_number']) or \
+               not operator.xor(ConnState,CheckConnection(self._Blade['mgmt_ip']))
+    def Next(self):
+        return WaitRestart(self._Driver,self._Blade,60,TimeWait=5)
+
+class WaitRestart(xBaseState):
+    def doRun(self):
+        print "\n".join(self.LogStr("Debug - Wait / validate restart "))
+        self._Driver.is_PowerOff(self._Blade['chassis_slot_number']) or not CheckConnection(self._Blade['mgmt_ip'])
+        #WaitResetStart(self._Blade)
+        #return True
+    def Next(self):
+        return ChUpFromRestart(self._Driver,self._Blade,45,TimeWait=10)
+
+class ChUpFromRestart(xBaseState):
+    def doRun(self):
+        return not CheckConnection(self._Blade['mgmt_ip'])
 
 
 class SingleBlade(object):
@@ -498,6 +515,41 @@ class SingleBlade(object):
             WrLog(self.Log,"Finished, OK")
         return 0
 
+
+############################################
+#   Base State
+##########################################
+
+class BaseState(object):
+    def __init__(self,Blade):
+        self.Blade=Blade
+
+    def getNext(self,Input):
+        pass
+
+    def State(self):
+        return "Base"
+
+    def RunState(self):
+        pass
+
+class LastReboot(BaseState):
+    """ This is the Last in the PXE Installation it waits till the Machine is avialable
+        after reboot.
+    """
+    def __init__(self,Blade):
+        super(LastReboot,self).__init__(Blade)
+        self._State="Last Reset"
+
+    def State(self):
+        return self._State
+
+    def RunState(self):
+        WaitResetStart(self.Blade)
+        while not CheckConnection(self.Blade['mgmt_ip']):
+            time.sleep(5)
+        self._State="Finshed O.K"
+        return self._State
 class AnacondaInstall(BaseState):
     def __init__(self,Blade):
         super(AnacondaInstall,self).__init__(Blade)
@@ -549,6 +601,7 @@ class ResetFirst(BaseState):
 class ChBootSeq(BaseState):
     pass
 
+
 def Th_Blade(State,Blade):
     StateMap={ 'Change Boot PXE ' : ChBootSeq ,
                'BootStart First' : ResetFirst,
@@ -557,10 +610,11 @@ def Th_Blade(State,Blade):
              }
     if not State in StateMap:
         if State == 'Test':
-            MyBlade=BootSeq(Blade['Driver'],Blade['chassis_slot_number'],30,Boot=Adapters.Boot_PXE)
+            MyBlade=BootSeq(Blade['Driver'],Blade,30,Boot=Adapters.Boot_PXE)
             while MyBlade:
                 MyBlade=MyBlade.Run()
             State="Finshed O.K"
+            print "\n\n\n\n ---  Debug ---- Test State Finished O.K !\n\n\n"
         else:
             Tid=threading.currentThread()
             raise Exception("Error - Thread %s Unknown State %s" % (Tid.name,State))
@@ -583,7 +637,7 @@ def Th_ChangeBootSeq(BootSeq,Driver,*BladeRec):
     print "\n\n\n\n************************************************"
     print "Going to start threads ............. ******"
     print "\n*****************************************************\n\n\n\n"
-    time.sleep(3)
+    #time.sleep(3)
     ThreadPool=[]
     if len(SlotList) < 2 : Results={ BladeRec[0]['chassis_slot_number'] : Results }
     for Slot,Status in Results.items():
@@ -730,7 +784,7 @@ for ChNode,ChRec in ChassiRec.items():
     PIdList[ChNode].start()
 
 Flag=1
-TimeOut=30
+TimeOut=300
 print "DEBUG - !!!!  Start Loop at the MAIN CORE Thread !!!!!!!!!!!!!!!!"
 while Flag and TimeOut:
     Flag=0
