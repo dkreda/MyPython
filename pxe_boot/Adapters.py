@@ -12,8 +12,13 @@ import subprocess,re,os,datetime
 import sys,subprocess,threading
 ## to support python 2.6.6
 # ExpectPath=subprocess.check_output('which expect')
-ExpectPath=subprocess.Popen(['which', 'expect'], stdout=subprocess.PIPE,stderr=subprocess.PIPE).communicate()[0]
-ExpectPath=ExpectPath.rstrip(os.linesep)
+print "Debug: ...."
+print os.name
+if not os.name =="nt":
+    ExpectPath=subprocess.Popen(['which', 'expect'], stdout=subprocess.PIPE,stderr=subprocess.PIPE).communicate()[0]
+    ExpectPath=ExpectPath.rstrip(os.linesep)
+else:
+    ExpectPath='.'
 
 Boot_PXE='PXE'
 Boot_CD='CD'
@@ -171,12 +176,18 @@ exit 0""" % (self.Prompt,self.EndToken))
             raise AMMError("Mode %s Not supported" % self.Mode)
 
 class RemoteRunner(AbsDriver):
+    #######################################################
+    # This class implement driver using cli commands
+
      def __init__(self,Host,User,Password,**Options):
         super(RemoteRunner,self).__init__(Host,User,Password,**Options)
         #print "Debug - in remote Runner Initiator"
         self.Mode=Options['Mode'] if 'Mode' in Options else RunnerDecorator.Mode_Login
         self.Promt=Options['Prompt'] if 'Prompt' in Options else '>'
         self._DelList=[]
+        self.__InfoList=[]
+        self.__StatusList=[]
+        self.__Cash={}
         @RunnerDecorator(self.Mode,self.Host,self.User,self.Password,self.Promt)
         def RunCmds(self,Cmds):
             #print "Debug - RunCmds Function"
@@ -199,11 +210,30 @@ class RemoteRunner(AbsDriver):
             return Result
         self.RunCmds=RunCmds
 
+     def __getInfo(self):
+         for Iter in xrange(15):
+             Mac=["%02x" % random.randint(0,255) for Oct in xrang(6)]
+             self.__Cash[Iter]={ 'MAC' : Mac}
+             self.__Cash[Iter]['Name']="Slot%02d" % Iter
+
+     def getMAC(self,Machine,NicNum=0):
+         if not len(self.__Cash):
+             self.__getInfo()
+         if not Machine in self.__Cash:
+            print "Error - No MAC Address found for Blade %s Nic%d" % (Machine,NicNum)
+            return None
+         else:
+             return self.__Cash[Machine]['MAC']
+
      def CleanTmpFiles(self):
          print "Debug - Running CleanTmpFiles from %s" % self.__class__
          for File in self._DelList:
              os.remove(File)
          self._DelList=[]
+
+     def setBootSeq(self,BootSeq,*MachineList):
+         return { i : 0 for i in MachineList} if len(MachineList) >  1 else 0
+
 
 class IBMAMMDriver(RemoteRunner):
     def __init__(self,Host,User,Password,**Options):
@@ -645,7 +675,8 @@ class VmWareDriver(AbsDriver):
 class MachineManage(object):
     DriverMap= { 'IBM' : IBMAMMDriver ,
                  'HP'  : HPAMMDriver ,
-                 'VmWare' : VmWareDriver }
+                 'VmWare' : VmWareDriver ,
+                 "TestRunner" : RemoteRunner}
     def __init__(self,Factory,Host,User,Password,**Options):
         if not Factory in MachineManage.DriverMap:
             raise AMMError("%s Hardware type is not supported" % Factory)
@@ -683,7 +714,9 @@ class MachineManage(object):
             self.Driver.CleanTmpFiles()
 
 def CheckHardware(Ip,User,Password):
-    print "Not Ready yet ...."
+    ##print "Not Ready yet ...."
+    ##print "\nDebug - CheckHardware(%s,%s,%s)" % (Ip,User,Password)
+    ## if os.name == 'nt' and
     for HwName,Driver in MachineManage.DriverMap.items():
         try:
             Tmp=Driver(Ip,User,Password,Mode=ConnMode)
