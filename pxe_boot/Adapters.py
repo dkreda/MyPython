@@ -10,9 +10,10 @@ __author__ = 'danielk'
 
 import subprocess,re,os,datetime
 import sys,subprocess,threading
+import pysphere as VmWare
 ## to support python 2.6.6
 # ExpectPath=subprocess.check_output('which expect')
-print "Debug: ...."
+#print "Debug: ...."
 print os.name
 if not os.name =="nt":
     ExpectPath=subprocess.Popen(['which', 'expect'], stdout=subprocess.PIPE,stderr=subprocess.PIPE).communicate()[0]
@@ -484,12 +485,68 @@ def VsphereChk(Method):
         return Method(self,*Args)
     return Decorator
 
+class FolderTree(object):
+    def __init__(self,VimServer):
+        self.__Server=VimServer
+        ##self.__Server=pysphere.VIServer()
+        ##self.__FByPath={}
+        #self.__FByMoRef={}
+        self.RefreshTree()
+
+    def RefreshTree(self):
+        if not self.__Server.is_connected():
+            raise Exception("VimServer EsXI not Connected")
+        print "Debug - Read Folders from Machine"
+        self.__FByMoRef=self.__Server._get_managed_objects(VmWare.MORTypes.Folder)
+        print "Debug - Start analyze ..."
+        if not self.__FByMoRef:
+            self.__FByMoRef={}
+            self.__FByPath={}
+            return
+        print "Debug - Read Folder Objects ..."
+        for Mo_Ref in self.__FByMoRef.keys():
+            VmRec=self.__Server._get_object_properties(Mo_Ref,property_names=('name','parent',))
+            self.__FByMoRef[Mo_Ref]={Prop.Name : Prop.Val for Prop in VmRec.PropSet }
+            self.__FByMoRef[Mo_Ref]['Ref']=Mo_Ref
+        print "Debug - Sync Indexes"
+        self.__SyncIndex()
+        print "Debug - Folder List:"
+        print "\n".join(self.__FByPath.keys())
+
+    def getFullPath(self,Ref):
+        #print "-D- Recursive call %s" % Ref
+        Tmp=self.__FByMoRef[Ref]['parent']  if 'parent' in self.__FByMoRef[Ref] else None
+        if Tmp and Tmp in self.__FByMoRef:
+            #print "Debug - Obj (%s -(%s)) has Parent (%s -(%s))" % (Ref,self.__FByMoRef[Ref]['name'],Tmp,self.__FByMoRef[Tmp]['name'])
+            return "" if Tmp == Ref else \
+                "%s/%s" % (self.getFullPath(self.__FByMoRef[Ref]['parent']),self.__FByMoRef[Ref]['name'])
+        else:
+            return ""
+
+    def __SyncIndex(self):
+        self.__FByPath={}
+        for Ref,VmRec in self.__FByMoRef.items():
+            FullPath=self.getFullPath(Ref)
+            VmRec['FullPath']=FullPath
+            self.__FByPath[FullPath]=VmRec
+
+    def __contains__(self, item):
+        return item in self.__FByMoRef or item in self.__FByPath
+
+    def __getitem__(self, item):
+        if item in self.__FByMoRef:
+            return self.__FByMoRef[item]
+        elif item in self.__FByPath:
+            return self.__FByPath[item]
+        return None
+
 class VmWareDriver(AbsDriver):
 
     def __init__(self,Host,User,Password,**Options):
         super(VmWareDriver,self).__init__(Host,User,Password,**Options)
         self.ServerLog=Options['TmpLog'] if 'TmpLog' in Options else None
-        import pysphere as VmWare
+        self.__Options=Options
+        #import pysphere as VmWare
         self.Server=VmWare.VIServer()
         self.VmRec={}
         #print "Debug - Finish to Init VmWareDriver ..."
@@ -499,6 +556,37 @@ class VmWareDriver(AbsDriver):
         self.Folder=Options['Folder'] if 'Folder' in Options else 'vm'
         self.ViException=VmWare.resources.vi_exception.VIException
         #self.BuildVmList()
+
+    def __BuildTopology(self):
+        print "Debug - Read Vm Machines ...."
+        print "Debug - Read Folder ...."
+        if not self.Server.is_connected():
+            self.Connect()
+        self.Dir=FolderTree(self.Server)
+        TmpObjList=self.Server._get_managed_objects(VmWare.MORTypes.VirtualMachine)
+        for VmView in TmpObjList.keys():
+            TmpObj=self.Server._get_object_properties(VmView, property_names=('name','parent','network',))
+            for KeyName in TmpObj.PropSet:
+                if not TmpObjList[VmView] in self.FDict :
+                    self.FDict[TmpObjList[VmView]]={}
+                self.FDict[TmpObjList[VmView]][KeyName.Name]=KeyName.Val
+        print "Debug - Topology :"
+        for tt,pp in self.FDict.items():
+            print "%s:" % tt
+            for gg,ll in pp.items():
+                print "\t - %s = %s" % (gg,ll)
+
+        print "\n\n\n\n"
+        for Vm in self.FDict.values():
+            try:
+                print "%s/%s" % (self.Dir.getFullPath(Vm['parent']),Vm['name'])
+            except KeyError as e:
+                print "\n"
+                print e.message
+                print Vm
+                print "\n"
+
+
 
     def __del__(self):
         self.Server.disconnect()
@@ -511,6 +599,7 @@ class VmWareDriver(AbsDriver):
                 self.Server.connect(self.Host,self.User,self.Password)
         except :
             print "Error - Fail to connect to %s with user %s:" % (self.Host,self.User)
+            print "\t\t(%s)" % self.Password
             print sys.exc_info()[0]
             raise
 
@@ -672,6 +761,36 @@ class VmWareDriver(AbsDriver):
                 return False
             raise
 
+    def CleanTmpFiles(self): pass
+
+    def setBootSeq(self,BootSeq,*MachineList):
+        print "Debug - Setting Boot Sequence at VmWare ...."
+        if not len(self.FDict):
+            self.__BuildTopology()
+        for Machin in MachineList:
+            if not Machin in self.FDict:
+                print "Warning - Machine %s not part of system" % Machin
+                continue
+            VmView=self.Server.get_vm_by_name(self.FDict[Machin]['name'])
+            TaskObj=VmView.set_extra_config({'bios.bootOrder' : Boot_PXE })
+            print TaskObj
+            print "========="
+            print dir(TaskObj)
+
+    def doRestart(self,Machine):
+        print "Debug - Restart %s ...." % Machine
+        if not len(self.FDict):
+            self.__BuildTopology()
+        #for Machin in MachineList:
+        #    if not Machin in self.FDict:
+        #        print "Warning - Machine %s not part of system" % Machin
+        #        continue
+        VmView=self.Server.get_vm_by_name(self.FDict[Machine]['name'])
+        return VmView.reset()
+
+
+
+
 class MachineManage(object):
     DriverMap= { 'IBM' : IBMAMMDriver ,
                  'HP'  : HPAMMDriver ,
@@ -712,6 +831,17 @@ class MachineManage(object):
         print "Debug - Running Clean from %s" % self.__class__
         if hasattr(self.Driver,'CleanTmpFiles'):
             self.Driver.CleanTmpFiles()
+
+    @property
+    def Hardware(self):
+        CName=re.compile(r'[\'\"](.+?)[\'\"]')
+        for Str,StrType in self.DriverMap.items():
+            Match = CName.search("%s" % StrType)
+            if re.search(Match.group(1),"%s" % self.Driver):
+                return Str
+            # print "Debug -- %s Not Match" % StrType
+        raise Exception("Fail to find %s" % self.Driver)
+        return self.Driver
 
 def CheckHardware(Ip,User,Password):
     ##print "Not Ready yet ...."

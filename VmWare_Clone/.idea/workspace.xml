@@ -26,11 +26,36 @@
       <file leaf-file-name="CloneSystem.py" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/CloneSystem.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.80984044" vertical-offset="751" max-vertical-offset="3383">
-              <caret line="228" column="16" selection-start-line="228" selection-start-column="16" selection-end-line="228" selection-end-column="16" />
+            <state vertical-scroll-proportion="0.48308524" vertical-offset="646" max-vertical-offset="5100">
+              <caret line="226" column="35" selection-start-line="226" selection-start-column="35" selection-end-line="226" selection-end-column="35" />
               <folding>
                 <element signature="e#23#47#0" expanded="true" />
                 <element signature="e#2150#3116#0" expanded="false" />
+                <element signature="e#3148#4771#0" expanded="false" />
+                <element signature="e#3235#3256#0" expanded="true" />
+                <element signature="e#3773#4076#0" expanded="true" />
+                <element signature="e#4119#4435#0" expanded="true" />
+                <element signature="e#4483#4608#0" expanded="true" />
+                <element signature="e#4652#4678#0" expanded="true" />
+                <element signature="e#4721#4771#0" expanded="true" />
+                <element signature="e#4807#5710#0" expanded="false" />
+                <element signature="e#4856#4909#0" expanded="true" />
+                <element signature="e#4941#5056#0" expanded="true" />
+                <element signature="e#5099#5125#0" expanded="true" />
+                <element signature="e#5237#5308#0" expanded="true" />
+                <element signature="e#5370#5471#0" expanded="true" />
+                <element signature="e#5515#5545#0" expanded="true" />
+                <element signature="e#5588#5625#0" expanded="true" />
+                <element signature="e#5659#5710#0" expanded="true" />
+                <element signature="e#5748#6621#0" expanded="false" />
+                <element signature="e#5812#5854#0" expanded="true" />
+                <element signature="e#6112#6621#0" expanded="true" />
+                <element signature="e#6691#6841#0" expanded="true" />
+                <element signature="e#7695#8185#0" expanded="true" />
+                <element signature="e#8222#8414#0" expanded="true" />
+                <element signature="e#8458#8514#0" expanded="true" />
+                <element signature="e#8557#8722#0" expanded="true" />
+                <element signature="e#8765#10078#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -43,8 +68,16 @@
       <setting name="OPEN_NEW_TAB" value="true" />
     </FindUsagesManager>
   </component>
+  <component name="IdeDocumentHistory">
+    <option name="changedFiles">
+      <list>
+        <option value="$PROJECT_DIR$/CloneSystem.py" />
+      </list>
+    </option>
+  </component>
   <component name="ProjectFrameBounds">
-    <option name="width" value="1424" />
+    <option name="y" value="98" />
+    <option name="width" value="1280" />
     <option name="height" value="888" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="false">
@@ -253,14 +286,14 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="0" width="1424" height="888" extended-state="0" />
+    <frame x="0" y="98" width="1280" height="888" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.22443181" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.25" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="-1" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="-1" side_tool="true" content_ui="tabs" />
@@ -297,11 +330,36 @@
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/CloneSystem.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.80984044" vertical-offset="751" max-vertical-offset="3383">
-          <caret line="228" column="16" selection-start-line="228" selection-start-column="16" selection-end-line="228" selection-end-column="16" />
+        <state vertical-scroll-proportion="0.48308524" vertical-offset="646" max-vertical-offset="5100">
+          <caret line="226" column="35" selection-start-line="226" selection-start-column="35" selection-end-line="226" selection-end-column="35" />
           <folding>
             <element signature="e#23#47#0" expanded="true" />
             <element signature="e#2150#3116#0" expanded="false" />
+            <element signature="e#3148#4771#0" expanded="false" />
+            <element signature="e#3235#3256#0" expanded="true" />
+            <element signature="e#3773#4076#0" expanded="true" />
+            <element signature="e#4119#4435#0" expanded="true" />
+            <element signature="e#4483#4608#0" expanded="true" />
+            <element signature="e#4652#4678#0" expanded="true" />
+            <element signature="e#4721#4771#0" expanded="true" />
+            <element signature="e#4807#5710#0" expanded="false" />
+            <element signature="e#4856#4909#0" expanded="true" />
+            <element signature="e#4941#5056#0" expanded="true" />
+            <element signature="e#5099#5125#0" expanded="true" />
+            <element signature="e#5237#5308#0" expanded="true" />
+            <element signature="e#5370#5471#0" expanded="true" />
+            <element signature="e#5515#5545#0" expanded="true" />
+            <element signature="e#5588#5625#0" expanded="true" />
+            <element signature="e#5659#5710#0" expanded="true" />
+            <element signature="e#5748#6621#0" expanded="false" />
+            <element signature="e#5812#5854#0" expanded="true" />
+            <element signature="e#6112#6621#0" expanded="true" />
+            <element signature="e#6691#6841#0" expanded="true" />
+            <element signature="e#7695#8185#0" expanded="true" />
+            <element signature="e#8222#8414#0" expanded="true" />
+            <element signature="e#8458#8514#0" expanded="true" />
+            <element signature="e#8557#8722#0" expanded="true" />
+            <element signature="e#8765#10078#0" expanded="true" />
           </folding>
         </state>
       </provider>

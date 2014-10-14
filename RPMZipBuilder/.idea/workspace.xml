@@ -23,48 +23,28 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="BuildRPMZip.py" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="BuildRPMZip.py" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/BuildRPMZip.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="476" max-vertical-offset="1258">
-              <caret line="11" column="14" selection-start-line="11" selection-start-column="4" selection-end-line="11" selection-end-column="14" />
-              <folding />
+            <state vertical-scroll-proportion="0.47115386" vertical-offset="1272" max-vertical-offset="2329">
+              <caret line="127" column="14" selection-start-line="127" selection-start-column="14" selection-end-line="127" selection-end-column="14" />
+              <folding>
+                <element signature="e#24#48#0" expanded="true" />
+                <element signature="e#1149#1857#0" expanded="true" />
+                <element signature="e#1906#1924#0" expanded="true" />
+                <element signature="e#1991#2219#0" expanded="true" />
+                <element signature="e#2266#2284#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="VersionBuild.py" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="VersionBuild.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/VersionBuild.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.8092567" vertical-offset="3027" max-vertical-offset="3740">
-              <caret line="234" column="90" selection-start-line="234" selection-start-column="90" selection-end-line="234" selection-end-column="90" />
-              <folding>
-                <element signature="e#80#850#0" expanded="true" />
-                <element signature="e#1004#1108#0" expanded="true" />
-                <element signature="e#1144#1890#0" expanded="true" />
-                <element signature="e#1933#2081#0" expanded="true" />
-                <element signature="e#2124#2153#0" expanded="true" />
-                <element signature="e#2238#2488#0" expanded="true" />
-                <element signature="e#2532#2553#0" expanded="true" />
-                <element signature="e#2600#2621#0" expanded="true" />
-                <element signature="e#2665#2684#0" expanded="true" />
-                <element signature="e#2728#2750#0" expanded="true" />
-                <element signature="e#2789#2818#0" expanded="true" />
-                <element signature="e#2857#2954#0" expanded="true" />
-                <element signature="e#2987#3710#0" expanded="false" />
-                <element signature="e#3030#3048#0" expanded="true" />
-                <element signature="e#3089#3323#0" expanded="true" />
-                <element signature="e#3367#3397#0" expanded="true" />
-                <element signature="e#3440#3468#0" expanded="true" />
-                <element signature="e#3505#3534#0" expanded="true" />
-                <element signature="e#3574#3710#0" expanded="true" />
-                <element signature="e#3937#4267#0" expanded="true" />
-                <element signature="e#4314#5194#0" expanded="true" />
-                <element signature="e#5239#5671#0" expanded="true" />
-                <element signature="e#5715#6559#0" expanded="true" />
-                <element signature="e#6607#6625#0" expanded="true" />
-                <element signature="e#6676#7410#0" expanded="true" />
-              </folding>
+            <state vertical-scroll-proportion="0.0" vertical-offset="3669" max-vertical-offset="4437">
+              <caret line="255" column="0" selection-start-line="255" selection-start-column="0" selection-end-line="255" selection-end-column="0" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -79,14 +59,13 @@
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/BuildRPMZip.py" />
         <option value="$PROJECT_DIR$/VersionBuild.py" />
+        <option value="$PROJECT_DIR$/BuildRPMZip.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="133" />
-    <option name="y" value="173" />
+    <option name="y" value="110" />
     <option name="width" value="1280" />
     <option name="height" value="877" />
   </component>
@@ -116,6 +95,7 @@
       <sortByType />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -140,7 +120,6 @@
           </PATH>
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -293,14 +272,14 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="133" y="173" width="1280" height="877" extended-state="1" />
-    <editor active="false" />
+    <frame x="0" y="110" width="1280" height="877" extended-state="1" />
+    <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.25" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.25" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
@@ -337,9 +316,37 @@
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/BuildRPMZip.py">
       <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="1374" max-vertical-offset="2329">
+          <caret line="124" column="41" selection-start-line="124" selection-start-column="41" selection-end-line="124" selection-end-column="41" />
+          <folding>
+            <element signature="e#24#48#0" expanded="true" />
+            <element signature="e#1149#1857#0" expanded="true" />
+            <element signature="e#1906#1924#0" expanded="true" />
+            <element signature="e#1991#2219#0" expanded="true" />
+            <element signature="e#2266#2284#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/VersionBuild.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="3669" max-vertical-offset="4437">
+          <caret line="255" column="0" selection-start-line="255" selection-start-column="0" selection-end-line="255" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/BuildRPMZip.py">
+      <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="187" max-vertical-offset="2856">
           <caret line="11" column="14" selection-start-line="11" selection-start-column="4" selection-end-line="11" selection-end-column="14" />
-          <folding />
+          <folding>
+            <element signature="e#24#48#0" expanded="true" />
+            <element signature="e#1149#1857#0" expanded="true" />
+            <element signature="e#1906#1924#0" expanded="true" />
+            <element signature="e#1991#2219#0" expanded="true" />
+            <element signature="e#2266#2284#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -347,33 +354,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="561">
           <caret line="189" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#80#850#0" expanded="true" />
-            <element signature="e#1004#1108#0" expanded="true" />
-            <element signature="e#1144#1890#0" expanded="true" />
-            <element signature="e#1933#2081#0" expanded="true" />
-            <element signature="e#2124#2153#0" expanded="true" />
-            <element signature="e#2238#2488#0" expanded="true" />
-            <element signature="e#2532#2553#0" expanded="true" />
-            <element signature="e#2600#2621#0" expanded="true" />
-            <element signature="e#2665#2684#0" expanded="true" />
-            <element signature="e#2728#2750#0" expanded="true" />
-            <element signature="e#2789#2818#0" expanded="true" />
-            <element signature="e#2857#2954#0" expanded="true" />
-            <element signature="e#2987#3710#0" expanded="false" />
-            <element signature="e#3030#3048#0" expanded="true" />
-            <element signature="e#3089#3323#0" expanded="true" />
-            <element signature="e#3367#3397#0" expanded="true" />
-            <element signature="e#3440#3468#0" expanded="true" />
-            <element signature="e#3505#3534#0" expanded="true" />
-            <element signature="e#3574#3710#0" expanded="true" />
-            <element signature="e#3937#4267#0" expanded="true" />
-            <element signature="e#4314#5194#0" expanded="true" />
-            <element signature="e#5239#5671#0" expanded="true" />
-            <element signature="e#5715#6559#0" expanded="true" />
-            <element signature="e#6607#6625#0" expanded="true" />
-            <element signature="e#6676#7410#0" expanded="true" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -381,7 +362,13 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2856">
           <caret line="141" column="24" selection-start-line="141" selection-start-column="0" selection-end-line="141" selection-end-column="24" />
-          <folding />
+          <folding>
+            <element signature="e#24#48#0" expanded="true" />
+            <element signature="e#1149#1857#0" expanded="true" />
+            <element signature="e#1906#1924#0" expanded="true" />
+            <element signature="e#1991#2219#0" expanded="true" />
+            <element signature="e#2266#2284#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -389,33 +376,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="1785" max-vertical-offset="3944">
           <caret line="124" column="12" selection-start-line="124" selection-start-column="12" selection-end-line="124" selection-end-column="12" />
-          <folding>
-            <element signature="e#80#850#0" expanded="true" />
-            <element signature="e#1004#1108#0" expanded="true" />
-            <element signature="e#1144#1890#0" expanded="true" />
-            <element signature="e#1933#2081#0" expanded="true" />
-            <element signature="e#2124#2153#0" expanded="true" />
-            <element signature="e#2238#2488#0" expanded="true" />
-            <element signature="e#2532#2553#0" expanded="true" />
-            <element signature="e#2600#2621#0" expanded="true" />
-            <element signature="e#2665#2684#0" expanded="true" />
-            <element signature="e#2728#2750#0" expanded="true" />
-            <element signature="e#2789#2818#0" expanded="true" />
-            <element signature="e#2857#2954#0" expanded="true" />
-            <element signature="e#2987#3710#0" expanded="false" />
-            <element signature="e#3030#3048#0" expanded="true" />
-            <element signature="e#3089#3323#0" expanded="true" />
-            <element signature="e#3367#3397#0" expanded="true" />
-            <element signature="e#3440#3468#0" expanded="true" />
-            <element signature="e#3505#3534#0" expanded="true" />
-            <element signature="e#3574#3710#0" expanded="true" />
-            <element signature="e#3937#4267#0" expanded="true" />
-            <element signature="e#4314#5194#0" expanded="true" />
-            <element signature="e#5239#5671#0" expanded="true" />
-            <element signature="e#5715#6559#0" expanded="true" />
-            <element signature="e#6607#6625#0" expanded="true" />
-            <element signature="e#6676#7410#0" expanded="true" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -423,7 +384,13 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="272" max-vertical-offset="2856">
           <caret line="16" column="91" selection-start-line="11" selection-start-column="0" selection-end-line="16" selection-end-column="91" />
-          <folding />
+          <folding>
+            <element signature="e#24#48#0" expanded="true" />
+            <element signature="e#1149#1857#0" expanded="true" />
+            <element signature="e#1906#1924#0" expanded="true" />
+            <element signature="e#1991#2219#0" expanded="true" />
+            <element signature="e#2266#2284#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -431,74 +398,28 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="187" max-vertical-offset="306">
           <caret line="11" column="0" selection-start-line="11" selection-start-column="0" selection-end-line="11" selection-end-column="0" />
-          <folding>
-            <element signature="e#80#850#0" expanded="true" />
-            <element signature="e#1004#1108#0" expanded="true" />
-            <element signature="e#1144#1890#0" expanded="true" />
-            <element signature="e#1933#2081#0" expanded="true" />
-            <element signature="e#2124#2153#0" expanded="true" />
-            <element signature="e#2238#2488#0" expanded="true" />
-            <element signature="e#2532#2553#0" expanded="true" />
-            <element signature="e#2600#2621#0" expanded="true" />
-            <element signature="e#2665#2684#0" expanded="true" />
-            <element signature="e#2728#2750#0" expanded="true" />
-            <element signature="e#2789#2818#0" expanded="true" />
-            <element signature="e#2857#2954#0" expanded="true" />
-            <element signature="e#2987#3710#0" expanded="false" />
-            <element signature="e#3030#3048#0" expanded="true" />
-            <element signature="e#3089#3323#0" expanded="true" />
-            <element signature="e#3367#3397#0" expanded="true" />
-            <element signature="e#3440#3468#0" expanded="true" />
-            <element signature="e#3505#3534#0" expanded="true" />
-            <element signature="e#3574#3710#0" expanded="true" />
-            <element signature="e#3937#4267#0" expanded="true" />
-            <element signature="e#4314#5194#0" expanded="true" />
-            <element signature="e#5239#5671#0" expanded="true" />
-            <element signature="e#5715#6559#0" expanded="true" />
-            <element signature="e#6607#6625#0" expanded="true" />
-            <element signature="e#6676#7410#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/BuildRPMZip.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="840" max-vertical-offset="1581">
-          <caret line="11" column="14" selection-start-line="11" selection-start-column="4" selection-end-line="11" selection-end-column="14" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/VersionBuild.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.8092567" vertical-offset="3027" max-vertical-offset="3740">
-          <caret line="234" column="90" selection-start-line="234" selection-start-column="90" selection-end-line="234" selection-end-column="90" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="3669" max-vertical-offset="4437">
+          <caret line="255" column="0" selection-start-line="255" selection-start-column="0" selection-end-line="255" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/BuildRPMZip.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.47115386" vertical-offset="1272" max-vertical-offset="2329">
+          <caret line="127" column="14" selection-start-line="127" selection-start-column="14" selection-end-line="127" selection-end-column="14" />
           <folding>
-            <element signature="e#80#850#0" expanded="true" />
-            <element signature="e#1004#1108#0" expanded="true" />
-            <element signature="e#1144#1890#0" expanded="true" />
-            <element signature="e#1933#2081#0" expanded="true" />
-            <element signature="e#2124#2153#0" expanded="true" />
-            <element signature="e#2238#2488#0" expanded="true" />
-            <element signature="e#2532#2553#0" expanded="true" />
-            <element signature="e#2600#2621#0" expanded="true" />
-            <element signature="e#2665#2684#0" expanded="true" />
-            <element signature="e#2728#2750#0" expanded="true" />
-            <element signature="e#2789#2818#0" expanded="true" />
-            <element signature="e#2857#2954#0" expanded="true" />
-            <element signature="e#2987#3710#0" expanded="false" />
-            <element signature="e#3030#3048#0" expanded="true" />
-            <element signature="e#3089#3323#0" expanded="true" />
-            <element signature="e#3367#3397#0" expanded="true" />
-            <element signature="e#3440#3468#0" expanded="true" />
-            <element signature="e#3505#3534#0" expanded="true" />
-            <element signature="e#3574#3710#0" expanded="true" />
-            <element signature="e#3937#4267#0" expanded="true" />
-            <element signature="e#4314#5194#0" expanded="true" />
-            <element signature="e#5239#5671#0" expanded="true" />
-            <element signature="e#5715#6559#0" expanded="true" />
-            <element signature="e#6607#6625#0" expanded="true" />
-            <element signature="e#6676#7410#0" expanded="true" />
+            <element signature="e#24#48#0" expanded="true" />
+            <element signature="e#1149#1857#0" expanded="true" />
+            <element signature="e#1906#1924#0" expanded="true" />
+            <element signature="e#1991#2219#0" expanded="true" />
+            <element signature="e#2266#2284#0" expanded="true" />
           </folding>
         </state>
       </provider>

@@ -93,11 +93,14 @@ def VerifySingleTone():
 def Validation(Conf):
     print "Debug - Validation is not ready yet ....."
     Adapters.ConnMode=Adapters.RunnerDecorator.Mode_Remote if 'batch' in Conf else Adapters.RunnerDecorator.Mode_Login
-    if not 'Debug' in Conf:
+    if not 'NoEMS' in Conf:
         print "Debug - Check Active EMS ..."
+        ##InfoCfg=ParseInfoFile(Conf['new_info_dir'][-1] if 'new_info_dir' in Conf else "/tftpboot/INFO_FILES")
         InfoCfg=ParseInfoFile("/etc/FlashNetworks/INFO")
         Active=False if subprocess.call([r'ifconfig',r'-a | grep %s' % InfoCfg['ems_ip']]) else True
-    return True
+    else:
+        Active=True
+    return Active
 
 def BuildHostList(Conf):
                        ## Map content
@@ -286,6 +289,8 @@ class xBaseState(object):
         self.__Retry=Retry
         self.__Wait=TimeWait
         self._Conf=Options
+        self.__KillFlag=False
+        self.__LastRun=0
         #self.__doRun=self.doRun
         #self.Test="Papa"
 
@@ -301,69 +306,110 @@ class xBaseState(object):
     def Next(self):
         pass
 
+    def Stop(self):
+        self.__KillFlag=True
+
+    @property
+    def RunTime(self):
+        return self.__LastRun
+
+    @property
+    def FinishedOK(self):
+        return True if self.__Retry < 0 else False
+
+    @property
+    def TimeOut(self):
+        return self.__TimeOut
+
+    @property
+    def BladeID(self):
+        HwMap= { 'VmWare' : 'server_name'}
+        print "\n\nDebug - Blade ID !!!!!!!!!!!           Hardware Type: (%s)" % self._Driver.Hardware
+        return HwMap[self._Driver.Hardware] if self._Driver.Hardware in HwMap else 'chassis_slot_number'
+
     def Run(self):
         #print "Debug - Run %s" % type(self)
         Start=datetime.datetime.now().time()
         Counter=1
         TimeAcum=0
         TimeStart=Start
-        while not self.doRun():
+        while not (self.__KillFlag or self.doRun()):
             Current=datetime.datetime.now().time()
-            TimeLen= DtToInt(Current) - DtToInt(TimeStart)
-            TimeAcum += TimeLen
-            if self.__TimeOut:
-                if Current + TimeAcum/Counter + self.__Wait > Start + self.__TimeOut:
-                    print "Error - Time Out !!!!"
-                    return None
-                    break
+            self.__LastRun=DtToInt(Current) - DtToInt(TimeStart)
+            #TimeLen= DtToInt(Current) - DtToInt(TimeStart)
+            #TimeAcum += TimeLen
+            #if self.__TimeOut:
+            #    if DtToInt(Current) + TimeAcum/Counter + self.__Wait > DtToInt(Start) + self.__TimeOut:
+            #        TmpArray=self.LogStr("Time Out ! Last operation Took More than %d seconds" %
+            #                             (DtToInt(Current) - DtToInt(Start) ) )
+            #        raise Exception(TmpArray[0])
+#                    print "Error - Time Out !!!!"
+#                    return None
+            #        break
             Counter += 1
             if self.__Retry and Counter > self.__Retry:
+                TmpArray=self.LogStr("Last operation Failed more than %d retries" % self.__Retry)
+                raise Exception(TmpArray[0])
                 print "Error - No more retry available"
                 return None
                 break
-            time.sleep(self.__Wait)
+            if not self.__KillFlag : time.sleep(self.__Wait)
             TimeStart=datetime.datetime.now().time()
         #Tmp=threading.currentThread()
         #print "Info - Thread %s finished goto next state\n" % Tmp.name
+        self.__LastRun=DtToInt(datetime.datetime.now().time()) - DtToInt(TimeStart)
         TimeStart=datetime.datetime.now().time()
-        print "\n".join(self.LogStr("Info  - Last State took %d" % (DtToInt(TimeStart) - DtToInt(Start)),
-                                    "Debug - Time Start %d , Start %d" % (DtToInt(TimeStart),DtToInt(Start)) ,
-                                    "Info  - Progress to next State"))
-        return self.Next()
+        if self.__KillFlag:
+            print(self.LogStr("Killed by Outside request"))
+            return None
+        else:
+            print "\n".join(self.LogStr("Info  - Last State took %d Total State Duration: %d" %
+                                        (self.__LastRun,DtToInt(TimeStart) - DtToInt(Start)),))
+                                    #"Debug - Time Start %d , Start %d" % (DtToInt(TimeStart),DtToInt(Start)) ,
+                                    #"Info  - Progress to next State"))
+            self.__Retry=-1  ### This signal the Task Finished O.K - No Errors
+            return self.Next()
 
 class BootSeq(xBaseState):
 
     def doRun(self):
         if 'Log' in self._Conf:
             WrLog(self._Conf['Log'],"Executing bootlist change to %s" % self._Conf['Boot'])
+        BladeID=self.BladeID
+        exit()
+        BladeID=self._Conf['Id'] if 'Id' in self._Conf else 'chassis_slot_number'
         print "\n%s\n" % "\n".join(self.LogStr("Debug - Setting Boot Sequence %s" % self._Conf['Boot'] ))
         #print "Debug - Setting Boot Sequence ....."
-        TmpChk=self._Driver.setBootSeq(self._Conf['Boot'],self._Blade['chassis_slot_number'])
+        TmpChk=self._Driver.setBootSeq(self._Conf['Boot'],self._Blade[BladeID])
         if TmpChk:
             ### TO DO Change this to interactive request ...
-            print "Error - Failed to change Boot sequence Slot %s" % self._Blade['chassis_slot_number']
+            print "Error - Failed to change Boot sequence Slot %s" % self._Blade[BladeID]
             print "\t %s" % TmpChk
             print " do you want to continue ???????????"
             return False
         return True
 
     def Next(self):
-        Tmp=threading.currentThread()
+        ## Tmp=threading.currentThread()
         #print "Debug - Thread %s in Finished BootSeq ... setting nextState" % Tmp.name
-        print "\n".join(self.LogStr("Debug - Change BootSeq succesfully"))
-        return BladeRestart(self._Driver,self._Blade,60,TimeWait=5)
+        if self.FinishedOK:
+            print "\n".join(self.LogStr("Debug - Change BootSeq succesfully"))
+            return BladeRestart(self._Driver,self._Blade,60,TimeWait=5,Id=self._Conf['Id'])
+        else:
+            return None
 
 class BladeRestart(xBaseState):
 
     def doRun(self):
         print "\nDebug Blade Type is %s" % type(self._Blade)
-        print "\nDebug Slot Number is %s" % self._Blade['chassis_slot_number']
-        self._Driver.doRestart(self._Blade['chassis_slot_number'])
+        BladeID=self._Conf['Id'] if 'Id' in self._Conf else 'chassis_slot_number'
+        print "\nDebug Slot Number is %s" % self._Blade[BladeID]
+        self._Driver.doRestart(self._Blade[BladeID])
         print "\n".join(self.LogStr("Debug - Restart Blade at slot %s" % self._Blade['chassis_slot_number'] ))
         return True
 
     def Next(self):
-        return WaitOffline(self._Driver,self._Blade,30,TimeWait=5)
+        return WaitOffline(self._Driver,self._Blade,30,TimeWait=5) if self.FinishedOK else None
 
 class WaitOffline(xBaseState):
     def doRun(self):
@@ -374,7 +420,7 @@ class WaitOffline(xBaseState):
         return self._Driver.is_PowerOff(self._Blade['chassis_slot_number']) or \
                not operator.xor(ConnState,CheckConnection(self._Blade['mgmt_ip']))
     def Next(self):
-        return WaitRestart(self._Driver,self._Blade,60,TimeWait=5)
+        return WaitRestart(self._Driver,self._Blade,60,TimeWait=5) if self.FinishedOK else None
 
 class WaitRestart(xBaseState):
     def doRun(self):
@@ -383,7 +429,7 @@ class WaitRestart(xBaseState):
         #WaitResetStart(self._Blade)
         #return True
     def Next(self):
-        return ChUpFromRestart(self._Driver,self._Blade,45,TimeWait=10)
+        return ChUpFromRestart(self._Driver,self._Blade,45,TimeWait=10) if self.FinishedOK else None
 
 class ChUpFromRestart(xBaseState):
     def doRun(self):
@@ -611,10 +657,34 @@ def Th_Blade(State,Blade):
     if not State in StateMap:
         if State == 'Test':
             MyBlade=BootSeq(Blade['Driver'],Blade,30,Boot=Adapters.Boot_PXE)
+            ThName="%s_Chiled" % threading.currentThread().name
             while MyBlade:
-                MyBlade=MyBlade.Run()
-            State="Finshed O.K"
-            print "\n\n\n\n ---  Debug ---- Test State Finished O.K !\n\n\n"
+                ChiledThread=threading.Thread(target=MyBlade.Run,name=ThName)
+                ChiledThread.start()
+                ChiledThread.join(MyBlade.TimeOut if MyBlade.TimeOut > 0 else 60 )
+                ## print "\nJoin Finished check if Child alive ..."
+                if ChiledThread.is_alive():
+
+                    print "\n".join(MyBlade.LogStr("Time Out - Task took Longer than %d seconds" % MyBlade.TimeOut ,
+                                   "Info - Task Manger (%s) Try to kill the Blade thread"))
+                    #print "Debug --- send stop to %s" % ChiledThread.name
+                    #time.sleep(20)
+                    ## Try to kill the chiled thread
+                    Counter=0
+                    MyBlade.Stop()
+                    while ChiledThread.isAlive() and not time.sleep(1):
+                        MyBlade.Stop()
+                        Counter += 1
+                        if not (Counter % 10):
+                            print "Warning - Thread %s Fail to stop child Thread" % threading.currentThread().name
+                        if not (Counter % 300):
+                            raise Exception("Error - Wait more than 5 Minutes to kill Chiled process")
+                    ## MyBlade=None
+                    break
+                else:
+                    MyBlade=MyBlade.Next()
+            State="Finshed O.K" if MyBlade else "Error During PxeBoot"
+            print "\n\n\n\n ---  Debug ---- Blade %s Configuration %s !\n\n\n" % (Blade['chassis_slot_number'],State)
         else:
             Tid=threading.currentThread()
             raise Exception("Error - Thread %s Unknown State %s" % (Tid.name,State))
@@ -667,6 +737,93 @@ def Th_ChangeBootSeq(BootSeq,Driver,*BladeRec):
             print "Debug - Chassi Thread %s waits %d threads to finish" % (threading.currentThread().getName(),Flag)
 
     print "\nDebug - Chassi Thread %s Finished.\n\tNumber of active Thread is %d" % (threading.currentThread().getName(),threading.activeCount())
+
+class ConfigChassi(object):
+    def __init__(self,ChRec,**Options):
+        self.__Chassi=ChRec
+        self.__Options=Options
+        self.__ThID={}
+        self.__BladeIdentifierMap= { 'VmWare' : 'server_name' }
+
+    @property
+    def Hardware(self):
+        if not '__HwType' in self.__Options:
+            self.__Options['__HwType']='TestRunner' if 'Hw' in self.__Options else \
+                Adapters.CheckHardware(self.__Chassi['chassis_ip'],
+                                          self.__Chassi['user_name'],
+                                          self.__Chassi['password'] )
+        if 'Debug' in self.__Options:
+            print "Debug - Chassi Hardware found: %s" % self.__Options['__HwType']
+        return self.__Options['__HwType']
+
+    @property
+    def Finished(self):
+        return False if self.Running else True
+
+    @property
+    def Running(self):
+        return [ChThead for ChThead in self.__ThID.values() if ChThead['Thread'].is_alive() ].__len__()
+
+    def __RunBladeTask(self,StateObj):
+        ThName="%s_Child" % threading.currentThread().name
+        Status=True
+        while StateObj:
+            ThChild=threading.Thread(target=StateObj.Run,name=ThName)
+            ThChild.start()
+            ThChild.join(StateObj.TimeOut if StateObj.TimeOut else 30)
+            if ThChild.is_alive():
+                StateObj.Stop()
+                Retry=5
+                while ThChild.is_alive():
+                    StateObj.Stop()
+                    time.sleep(1)
+                    Retry -= 1
+                if Retry:
+                    raise Exception("\n".join(StateObj.LogStr("Task time out: Task is running more than %d seconds (Last Run Duration %d second" %
+                                                              (StateObj.TimeOut,StateObj.RunTime))))
+                else:
+                    raise Exception("Fatal: %s Failed to kill Thread %s" % (threading.currentThread().name,
+                                "-".join(StateObj.LogStr("Still Running !"))))
+            else:
+                Status=StateObj.FinishedOK
+                StateObj=StateObj.Next()
+        if Status:
+            print "Debug - %s Finished to configure Balde" % ThName
+        else:
+            raise Exception("Blade Configuration have Not Finished")
+
+
+    def StartConfig(self):
+        Driver=Adapters.MachineManage(self.Hardware,self.__Chassi['chassis_ip'],
+                                          self.__Chassi['user_name'],
+                                          self.__Chassi['password'] )
+        for BladeID,BladeRec in self.__Chassi.items():
+            if not re.match(r'^[\d\.]+$',BladeID): continue
+            BladeObj=BootSeq(Driver,BladeRec,30,Boot=Adapters.Boot_PXE,
+                             Id=self.__BladeIdentifierMap[self.Hardware] if self.Hardware in self.__BladeIdentifierMap else 'chassis_slot_number')
+            self.__ThID[BladeID]={'Obj' : BladeObj ,
+                                  'Thread' : threading.Thread(target=self.__RunBladeTask,
+                                                              name="%s_%s_%s" % (BladeRec['mgmt_ip'],
+                                                                                 BladeRec['chassis_slot_number'],
+                                                                                 BladeRec['server_name']),
+                                                              args=(BladeObj,))}
+
+        for BladeRec in self.__ThID.values():
+            BladeRec['Thread'].start()
+
+
+    def BladesInProcess(self):
+        return "Number of Blades that still in process"
+
+    def Wait(self,TimeOut=900):
+        for ThreadIter in self.__ThID.values():
+            if ThreadIter['Thread'].is_alive():
+                ThreadIter['Thread'].join(TimeOut)
+                print "Debug - %s Finished to Wait " % threading.currentThread().name
+                return
+
+    def StopConfig(self):
+        pass
 
 def ChassiOp(ChRec):
     #ChRec=
@@ -758,6 +915,10 @@ if not Validation(FullConfig):
 #InfoDir=FullConfig['new_info_dir'][-1] if 'new_info_dir' in FullConfig else "/tftpboot/INFO_FILES"
 #ChassiRec={}
 ChassiRec=BuildHostList(FullConfig)
+#print ChassiRec
+#for It in ChassiRec.values():
+#    print "\n\n\n%s" % "\n".join(It.keys())
+#exit()
 #for Blade_IP in FullConfig['ip']:
 #    InfoName="%s/INFO_%s" % (InfoDir,Blade_IP)
 #    TmpHash=ParseInfo(InfoName)
@@ -777,14 +938,54 @@ ChassiRec=BuildHostList(FullConfig)
 PIdList={}
 SlotList=[]
 for ChNode,ChRec in ChassiRec.items():
-    PIdList[ChNode]=threading.Thread(target=ChassiOp,
-                                     name=ChNode,
-                                     args=(ChRec,)
-    )
-    PIdList[ChNode].start()
+    PIdList[ChNode]=ConfigChassi(ChRec,Debug=True,TimeOut=900)
+    PIdList[ChNode].StartConfig()
+    if 'Debug' in FullConfig:
+        print "Debug - Chassi %s Type is %s" % (ChNode,PIdList[ChNode].Hardware)
 
+
+
+#    PIdList[ChNode]=threading.Thread(target=ChassiOp,
+#                                     name=ChNode,
+#                                     args=(ChRec,)
+#    )
+#    PIdList[ChNode].start()
+Current=datetime.datetime.now().time()
+TimeOut=DtToInt(Current)+900
+##pp=ConfigChassi(ChRec,Debug=True,TimeOut=900)
+#PIdList.values()[0].Wait()
+Flag=True
+while DtToInt(datetime.datetime.now().time()) <= TimeOut and Flag:
+    Flag=False
+    for ChThread in PIdList.values():
+        if ChThread.Running:
+            ChThread.Wait(TimeOut - DtToInt(datetime.datetime.now().time()))
+            Flag=True
+            break
+print "Debug - Main Finished to wait check if there is need to kill Threads ...."
+Counter=3
+while DtToInt(datetime.datetime.now().time()) > TimeOut:
+    for ChId,ChThread in PIdList.items():
+        if ChThread.Running:
+            ChThread.StopConfig()
+            print "Info - Main Thread try to finish Chassi %s Configuration" % ChId
+    time.sleep(1)
+    Counter -= 1
+    if not Counter:
+        break
+
+if Counter and threading.activeCount() > 1:
+    raise Exception("Error - Not all Thread have been stop %d" % threading.activeCount())
 Flag=1
 TimeOut=300
+exit()
+##### Change the Loop to trace Thread and not process ...
+#pp=threading.Thread()
+
+#pp.is_alive
+
+
+
 print "DEBUG - !!!!  Start Loop at the MAIN CORE Thread !!!!!!!!!!!!!!!!"
 while Flag and TimeOut:
     Flag=0
