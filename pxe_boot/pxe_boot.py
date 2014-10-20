@@ -172,7 +172,7 @@ def ClearSSHFingerPrint(Ip):
 
 def CheckConnection(IP,TimeOut=3):
     PingCmd='ping -n 2 -w %d %s > nul' if os.name == 'nt' else "ping -c 2 -W %d %s 2>&1 > /dev/nul"
-    return os.system(PingCmd % (TimeOut,IP))
+    return not os.system(PingCmd % (TimeOut,IP))
 #        return not os.system("ping -c 2 -W %d %s 2>&1 > /dev/nul" % (TimeOut,IP))
 
 def WaitResetStart(Blade):
@@ -324,11 +324,15 @@ class xBaseState(object):
     @property
     def BladeID(self):
         HwMap= { 'VmWare' : 'server_name'}
-        print "\n\nDebug - Blade ID !!!!!!!!!!!           Hardware Type: (%s)" % self._Driver.Hardware
-        return HwMap[self._Driver.Hardware] if self._Driver.Hardware in HwMap else 'chassis_slot_number'
+        ## print "\n\nDebug - Blade ID !!!!!!!!!!!           Hardware Type: (%s)" % self._Driver.Hardware
+        Result=HwMap[self._Driver.Hardware] if self._Driver.Hardware in HwMap else 'chassis_slot_number'
+        if 'Debug' in self._Conf:
+            Message="\n".join(self.LogStr("Debug - HwType: %s , Blade ID Field name: %s" % Result))
+            print Message
+        return Result
 
     def Run(self):
-        #print "Debug - Run %s" % type(self)
+        print "Debug - Run %s" % type(self)
         Start=datetime.datetime.now().time()
         Counter=1
         TimeAcum=0
@@ -376,10 +380,11 @@ class BootSeq(xBaseState):
         if 'Log' in self._Conf:
             WrLog(self._Conf['Log'],"Executing bootlist change to %s" % self._Conf['Boot'])
         BladeID=self.BladeID
-        exit()
-        BladeID=self._Conf['Id'] if 'Id' in self._Conf else 'chassis_slot_number'
-        print "\n%s\n" % "\n".join(self.LogStr("Debug - Setting Boot Sequence %s" % self._Conf['Boot'] ))
+        #BladeID=self._Conf['Id'] if 'Id' in self._Conf else 'chassis_slot_number'
+
         #print "Debug - Setting Boot Sequence ....."
+        if 'Debug' in self._Conf:
+            print "\n%s\n" % "\n".join(self.LogStr("Debug - Setting Boot Sequence %s" % self._Conf['Boot'] ))
         TmpChk=self._Driver.setBootSeq(self._Conf['Boot'],self._Blade[BladeID])
         if TmpChk:
             ### TO DO Change this to interactive request ...
@@ -401,31 +406,40 @@ class BootSeq(xBaseState):
 class BladeRestart(xBaseState):
 
     def doRun(self):
-        print "\nDebug Blade Type is %s" % type(self._Blade)
-        BladeID=self._Conf['Id'] if 'Id' in self._Conf else 'chassis_slot_number'
-        print "\nDebug Slot Number is %s" % self._Blade[BladeID]
+        #print "\nDebug Blade Type is %s" % type(self._Blade)
+        #BladeID=self._Conf['Id'] if 'Id' in self._Conf else 'chassis_slot_number'
+        BladeID=self.BladeID
+        Counter=5
+        if 'Debug' in self._Conf:
+            print "\n".join(self.LogStr("Debug - Restart Blade %s" % self._Blade[BladeID] ))
+        ConnState = CheckConnection(self._Blade['mgmt_ip'])
         self._Driver.doRestart(self._Blade[BladeID])
-        print "\n".join(self.LogStr("Debug - Restart Blade at slot %s" % self._Blade['chassis_slot_number'] ))
+        while not self._Driver.is_PowerOff and (ConnState ^ CheckConnection(self._Blade['mgmt_ip'])):
+            Counter -= 1
+            time.sleep(1)
+        ConnState2 = CheckConnection(self._Blade['mgmt_ip'])
+        print "Debug - Connection State Before %s After %s" % (ConnState,ConnState2)
         return True
 
     def Next(self):
-        return WaitOffline(self._Driver,self._Blade,30,TimeWait=5) if self.FinishedOK else None
+        return WaitRestart(self._Driver,self._Blade,75,TimeWait=5) if self.FinishedOK else None
 
 class WaitOffline(xBaseState):
     def doRun(self):
-        print "\n".join(self.LogStr("Debug - Validate offline"))
         ConnState = CheckConnection(self._Blade['mgmt_ip'])
+        print "\n".join(self.LogStr("Debug - Validate offline %s" % ConnState))
+        #ConnState = CheckConnection(self._Blade['mgmt_ip'])
         ## Verify offline or wait period time
-        #print "Debug - Verify offline at Blade %s (slot %s) Connection State is %s" % (IP,Blade['chassis_slot_number'],ConnState)
-        return self._Driver.is_PowerOff(self._Blade['chassis_slot_number']) or \
-               not operator.xor(ConnState,CheckConnection(self._Blade['mgmt_ip']))
+        return self._Driver.is_PowerOff(self._Blade[self.BladeID]) or \
+                operator.xor(ConnState,CheckConnection(self._Blade['mgmt_ip']))
     def Next(self):
         return WaitRestart(self._Driver,self._Blade,60,TimeWait=5) if self.FinishedOK else None
 
 class WaitRestart(xBaseState):
     def doRun(self):
-        print "\n".join(self.LogStr("Debug - Wait / validate restart "))
-        self._Driver.is_PowerOff(self._Blade['chassis_slot_number']) or not CheckConnection(self._Blade['mgmt_ip'])
+        print "\n".join(self.LogStr("Debug - Wait / validate restart %s" % (not self._Driver.is_PowerOff(self._Blade[self.BladeID]) or CheckConnection(self._Blade['mgmt_ip']))))
+        #print "Debug - State "
+        return not self._Driver.is_PowerOff(self._Blade[self.BladeID]) or CheckConnection(self._Blade['mgmt_ip'])
         #WaitResetStart(self._Blade)
         #return True
     def Next(self):
@@ -433,7 +447,7 @@ class WaitRestart(xBaseState):
 
 class ChUpFromRestart(xBaseState):
     def doRun(self):
-        return not CheckConnection(self._Blade['mgmt_ip'])
+        return CheckConnection(self._Blade['mgmt_ip'])
 
 
 class SingleBlade(object):
@@ -764,9 +778,12 @@ class ConfigChassi(object):
     def Running(self):
         return [ChThead for ChThead in self.__ThID.values() if ChThead['Thread'].is_alive() ].__len__()
 
-    def __RunBladeTask(self,StateObj):
+    def __RunBladeTask(self,BladeID):
         ThName="%s_Child" % threading.currentThread().name
         Status=True
+        StateObj=self.__ThID[BladeID]['Obj']
+        #print "\n\nDebug - __RunBladeTask(%s)" % BladeID
+        #print "\n\n\nDebuf - %s" % StateObj
         while StateObj:
             ThChild=threading.Thread(target=StateObj.Run,name=ThName)
             ThChild.start()
@@ -786,9 +803,11 @@ class ConfigChassi(object):
                                 "-".join(StateObj.LogStr("Still Running !"))))
             else:
                 Status=StateObj.FinishedOK
+                # print "Debug - %s Finished O.K (%s)go To Next State ...." % (StateObj,Status)
                 StateObj=StateObj.Next()
         if Status:
             print "Debug - %s Finished to configure Balde" % ThName
+            self.__ThID[BladeID]['ConfState']="O.K"
         else:
             raise Exception("Blade Configuration have Not Finished")
 
@@ -806,7 +825,7 @@ class ConfigChassi(object):
                                                               name="%s_%s_%s" % (BladeRec['mgmt_ip'],
                                                                                  BladeRec['chassis_slot_number'],
                                                                                  BladeRec['server_name']),
-                                                              args=(BladeObj,))}
+                                                              args=(BladeID,))}
 
         for BladeRec in self.__ThID.values():
             BladeRec['Thread'].start()
@@ -814,6 +833,15 @@ class ConfigChassi(object):
 
     def BladesInProcess(self):
         return "Number of Blades that still in process"
+
+    @property
+    def ErrorConf(self):
+        ErrCount=0
+        for Iter in self.__ThID.values():
+            if Iter['Thread'].is_alive(): continue
+            if 'ConfState' in Iter: continue
+            ErrCount += 1
+        return ErrCount
 
     def Wait(self,TimeOut=900):
         for ThreadIter in self.__ThID.values():
@@ -969,6 +997,9 @@ while DtToInt(datetime.datetime.now().time()) > TimeOut:
         if ChThread.Running:
             ChThread.StopConfig()
             print "Info - Main Thread try to finish Chassi %s Configuration" % ChId
+        else:
+            if ChThread.ErrorConf:
+                print "Warning - Chassi %s failed to configure %d blades" % (ChThread,ChThread.ErrorConf)
     time.sleep(1)
     Counter -= 1
     if not Counter:

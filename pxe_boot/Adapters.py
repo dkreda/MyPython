@@ -496,22 +496,22 @@ class FolderTree(object):
     def RefreshTree(self):
         if not self.__Server.is_connected():
             raise Exception("VimServer EsXI not Connected")
-        print "Debug - Read Folders from Machine"
+        #print "Debug - Read Folders from Machine"
         self.__FByMoRef=self.__Server._get_managed_objects(VmWare.MORTypes.Folder)
-        print "Debug - Start analyze ..."
+        #print "Debug - Start analyze ..."
         if not self.__FByMoRef:
             self.__FByMoRef={}
             self.__FByPath={}
             return
-        print "Debug - Read Folder Objects ..."
+        #print "Debug - Read Folder Objects ..."
         for Mo_Ref in self.__FByMoRef.keys():
             VmRec=self.__Server._get_object_properties(Mo_Ref,property_names=('name','parent',))
             self.__FByMoRef[Mo_Ref]={Prop.Name : Prop.Val for Prop in VmRec.PropSet }
             self.__FByMoRef[Mo_Ref]['Ref']=Mo_Ref
-        print "Debug - Sync Indexes"
+        #print "Debug - Sync Indexes"
         self.__SyncIndex()
-        print "Debug - Folder List:"
-        print "\n".join(self.__FByPath.keys())
+       # print "Debug - Folder List:"
+        #print "\n".join(self.__FByPath.keys())
 
     def getFullPath(self,Ref):
         #print "-D- Recursive call %s" % Ref
@@ -570,13 +570,13 @@ class VmWareDriver(AbsDriver):
                 if not TmpObjList[VmView] in self.FDict :
                     self.FDict[TmpObjList[VmView]]={}
                 self.FDict[TmpObjList[VmView]][KeyName.Name]=KeyName.Val
-        print "Debug - Topology :"
-        for tt,pp in self.FDict.items():
-            print "%s:" % tt
-            for gg,ll in pp.items():
-                print "\t - %s = %s" % (gg,ll)
+        #print "Debug - Topology :"
+        #for tt,pp in self.FDict.items():
+        #    print "%s:" % tt
+        #   for gg,ll in pp.items():
+        #        print "\t - %s = %s" % (gg,ll)
 
-        print "\n\n\n\n"
+        #print "\n\n\n\n"
         for Vm in self.FDict.values():
             try:
                 print "%s/%s" % (self.Dir.getFullPath(Vm['parent']),Vm['name'])
@@ -764,7 +764,7 @@ class VmWareDriver(AbsDriver):
     def CleanTmpFiles(self): pass
 
     def setBootSeq(self,BootSeq,*MachineList):
-        print "Debug - Setting Boot Sequence at VmWare ...."
+        ##print "\n\nDebug - Setting Boot Sequence at VmWare ....\n"
         if not len(self.FDict):
             self.__BuildTopology()
         for Machin in MachineList:
@@ -773,9 +773,9 @@ class VmWareDriver(AbsDriver):
                 continue
             VmView=self.Server.get_vm_by_name(self.FDict[Machin]['name'])
             TaskObj=VmView.set_extra_config({'bios.bootOrder' : Boot_PXE })
-            print TaskObj
-            print "========="
-            print dir(TaskObj)
+            #print TaskObj
+            #print "========="
+            #print dir(TaskObj)
 
     def doRestart(self,Machine):
         print "Debug - Restart %s ...." % Machine
@@ -788,7 +788,22 @@ class VmWareDriver(AbsDriver):
         VmView=self.Server.get_vm_by_name(self.FDict[Machine]['name'])
         return VmView.reset()
 
-
+    def is_PowerOff(self,*MachineList):
+        if not len(self.FDict):
+            self.__BuildTopology()
+        Result={}
+        for Machin in MachineList:
+            if not Machin in self.FDict:
+                print "Warning - Machine %s not part of system" % Machin
+                Result[Machin]='Error'
+                continue
+            else:
+                VmView=self.Server.get_vm_by_name(self.FDict[Machin]['name'])
+                Result[Machin]=False if re.match('POWERED ON',VmView.get_status()) else True
+                print "Debug - %s State is /%s/POWERED ON/" % (Machin,VmView.get_status())
+        print "Debug - Result:"
+        print Result
+        return Result if len(MachineList) > 1 else Result[MachineList[0]]
 
 
 class MachineManage(object):
