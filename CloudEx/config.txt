@@ -1,0 +1,39 @@
+###############################################################################
+#
+# Credentials parameters
+#
+###############################################################################
+[System]
+#AWS Access:  https://porticor-hiring.signin.aws.amazon.com/console
+#User name: dkreda@gmail.com
+#Password: 9ee6bc92aba0dcf7ba01
+#Access Key ID: AKIAJLG3RFTKQIT3BFNQ
+#Secret Access Key: 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
+
+
+aws_access_key_id=AKIAJLG3RFTKQIT3BFNQ
+aws_secret_access_key=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
+region=eu-west-1
+
+debug=1
+AmiName=bitnami-tinytinyrss-1.15.3-0-linux-redhat-6.5-x86_64-hvm-ebs
+KeyName=MySampleKey
+SSH=C:\Program Files\PuTTY
+Repository=C:\Users\dkreda\Documents\Projects\Amazon
+
+## ? https_connection_factory=https://porticor-hiring.signin.aws.amazon.com/console
+
+#is_secure=True, host=None, port=None, proxy=None, proxy_port=None, proxy_user=None, proxy_pass=None, debug=0,
+#  path='/', api_version=None, security_token=None,
+#validate_certs=True, profile_name=None
+
+###############################################################################
+#
+# Web server Configuration
+#
+###############################################################################
+IntPort=80
+ExtPort=8080
+MinInstance=2
+MaxInstance=2
+Health_Check_Interval=10
