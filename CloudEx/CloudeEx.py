@@ -422,7 +422,7 @@ class WebServer(VmGen):
             ErrMessage= [ "Error - Mantis Server return Error %d" % Res.status ,
                            Res.reason ,
                           "Headers : ",
-                          Res.msg ]
+                          str(Res.msg) ]
             raise Exception("\n".join(ErrMessage))
         if DBFlag:
             print "< %d >" % Res.status
