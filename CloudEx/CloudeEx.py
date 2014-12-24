@@ -174,11 +174,21 @@ class VmGen(object):
         self.__Stop=True
 
     @property
+    def Stopped(self):
+        return self.__Stop
+
+    @property
     def Instance(self): return self.__Instance
 
     @property
     def get_Inst_id_List(self):
         return [Inst.id for Inst in self.Instance] if self.__Instance else None
+
+    def Load(self,*InstanceID):
+        #self.__Conn=boto.ec2.EC2Connection()
+        self.__Instance=self.__Conn.get_only_instances(InstanceID)
+        #(Conn,Templ)=self.Info
+
 
 
     def LunchMachine(self,StartScript=None,**Tags):
@@ -241,6 +251,151 @@ class DbServer(VmGen):
         print "This is DataBase Statsus ..."
         return False
 
+class HTMLState1(object):
+    def __init__(self,Content,LineNo=0):
+        self.__Con=Content
+        self.__Indx=LineNo
+        self.EventFlag=False
+        #self.__Next=Next
+        self.StartOps()
+
+    def StartOps(self):
+        self.__Chk=re.compile('Please add the following lines to\s+(\S+)')
+        self.__Chk00=re.compile("Install was successful")
+
+    @property
+    def Line(self):
+        #print self.__Con[self.__Indx]
+        return self.__Con[self.__Indx]
+
+    @property
+    def Content(self): return self.__Con
+
+    @property
+    def Line_Num(self): return self.__Indx
+
+    def Step(self,Count=1):
+        self.__Indx += Count
+
+    def Event(self):
+        Tmp=self.__Chk.search(self.Line)
+        if Tmp:
+            self.EventFlag=HTMLState2
+            return ('File' , Tmp.group(1))
+        else :
+            Tmp=self.__Chk00.search(self.Line)
+            if Tmp:
+                self.EventFlag=HTMLState4
+                return None
+            self.Step()
+            return None
+
+    def Next(self):
+        if self.EventFlag:
+            return self.EventFlag(self.Content,self.Line_Num)
+        else:
+            #self.__Indx +=1
+            if self.Line_Num > (len(self.Content) - 6):
+                print "Debug - Line %d of %d" % (self.Line_Num,len(self.Content))
+                print self.Line
+                print self.EventFlag
+            return self if self.Line_Num < len(self.Content) else None
+
+
+class HTMLState2(HTMLState1):
+    def StartOps(self):
+        self.__Chk1=re.compile('<pre>(.+?)(<|$)')
+        self.__Tr ={ '>' : re.compile(r'&gt;') ,
+                     '<' : re.compile(r'&lt;') ,
+                     '&' : re.compile(r'&amp;') ,
+                     r'"' : re.compile(r'&quot;') ,
+                     '-' : re.compile(r'&ndash;') }
+
+    def Event(self):
+        Tmp=self.__Chk1.search(self.Line)
+        self.Step()
+        if Tmp:
+            self.EventFlag=True
+            #print "-D going to step 3"
+            Result= Tmp.group(1)
+            for Ascii,HtmlR in self.__Tr.items():
+                Result=HtmlR.sub(Ascii,Result)
+            return ('Content' , Result)
+        else:
+            return None
+
+    def Next(self):
+        if self.EventFlag:
+            return HTMLState3(self.Content,self.Line_Num)
+        else:
+            return self if self.Line_Num < len(self.Content) else None
+
+class HTMLState3(HTMLState1):
+    def StartOps(self):
+        self.__Chk1=re.compile('(.*)</pre')
+
+        self.__Tr ={ '>' : re.compile(r'&gt;') ,
+                     '<' : re.compile(r'&lt;') ,
+                     '&' : re.compile(r'&amp;') ,
+                     r'"' : re.compile(r'&quot;') ,
+                     '-' : re.compile(r'&ndash;') }
+
+    def Event(self):
+        Tmp=self.__Chk1.search(self.Line)
+        Result= Tmp.group(1) if Tmp else self.Line
+        #Result=Result.rstrip()
+        for Ascii,HtmlR in self.__Tr.items():
+            Result=HtmlR.sub(Ascii,Result)
+        #Result=""
+        #Result.rstrip()
+        self.Step()
+        if Tmp:
+            self.EventFlag=True
+        return ( 'Content', Result.rstrip() )
+
+    def Next(self):
+        if self.EventFlag:
+            return HTMLState4(self.Content,self.Line_Num)
+        else:
+            return self if self.Line_Num < len(self.Content) else None
+
+class HTMLState4(HTMLState1):
+    def StartOps(self):
+        self.__Chk1=re.compile("Install was successful")
+
+    def Event(self):
+        Tmp=self.__Chk1.search(self.Line)
+        self.Step()
+        if Tmp:
+            self.EventFlag=True
+            return ( 'Status' , 'O.K')
+        else:
+            return None
+
+    def Next(self):
+        if self.EventFlag:
+            return HTMLState5(self.Content,self.Line_Num)
+        else:
+            return self if self.Line_Num < len(self.Content) else None
+
+class HTMLState5(HTMLState1):
+    def StartOps(self):
+        self.__Chk1=re.compile('<a href="(.+?)">(Continue|create)')
+
+    def Event(self):
+        Tmp=self.__Chk1.search(self.Line)
+        self.Step()
+        if Tmp:
+            self.EventFlag=True
+            return ('Url' , Tmp.group(1))
+        else:
+            return None
+
+    def Next(self):
+        return None if self.EventFlag or self.Line_Num >= len(self.Content) else self
+
+
+
 class WebServer(VmGen):
     def Install(self):
         (Conn,Templ)=self.Info
@@ -250,12 +405,100 @@ class WebServer(VmGen):
         if MachineList:
             CreateWebInstace(MachineList[0].public_dns_name,Templ)
 
+    def SecPhase(self,DBHost,Port=None):
+        print "Info - Running Second Phase Installation ..."
+        #InstallUrl="http://%s/mantisbt/admin/install.php" % self.Instance[0].public_dns_name
+        InstallUrl="/mantisbt/admin/install.php"
+        UserAget="'Automation Script - Installer Task'"
+        if DBFlag: print "Debug - Install Url: %s" % InstallUrl
+        (AwsConn,Template)=self.Info
+        #Template=MachineTemplate()
+        HttpHead={ 'User-Agent' : UserAget }
+        #HttpConn=httplib.HTTPConnection(self.Instance[0].ip_address,Port)
+        HttpConn=httplib.HTTPConnection(self.Instance[0].public_dns_name,Port)
+        HttpConn.request('GET',InstallUrl,headers=HttpHead)
+        Res=HttpConn.getresponse()
+        if not Res.status == 200:
+            ErrMessage= [ "Error - Mantis Server return Error %d" % Res.status ,
+                           Res.reason ,
+                          "Headers : ",
+                          Res.msg ]
+            raise Exception("\n".join(ErrMessage))
+        if DBFlag:
+            print "< %d >" % Res.status
+            print Res.msg
+            print "------------------------"
+        Cook=Res.getheader('Set-Cookie')
+        if DBFlag: print "Debug - Cookie %s" % Cook
+        FormParams={ 'db_type' : 'mysql' ,
+                     'db_username' : 'dbadmin' ,
+                     'db_password' : 'dbadmin' ,
+                     'database_name' : 'bugtracker' ,
+                     'admin_username' : 'dbadmin' ,
+                     'admin_password' : 'dbadmin' ,
+                     'hostname' : DBHost ,
+                     'go' : r'Install%2FUpgrade+Database' ,
+                     'install' : '2' }
+        #print "Debug - Post Params:"
+        Body=r'&'.join([ '='.join([Pn,Pv]) for Pn,Pv in FormParams.items()])
+        if DBFlag: print "Debug  - Post Parameters:\n\t %s" % Body
+        HttpHead={'cookie' : Cook ,
+                  'Content-Type' : 'application/x-www-form-urlencoded' ,
+                  'User-Agent' : UserAget}
+        HttpConn.request('POST',InstallUrl,body=Body,headers=HttpHead)
+        Res=HttpConn.getresponse()
+        Body=Res.read().split('\n')
+        ErrMessage=["Post request return %d" % Res.status ,
+                    "<----  Headers   ---->" ,
+                    str(Res.msg) ,
+                    "<=====   Body  ====>" ]
+        ErrMessage.extend(Body)
+        if not Res.status == 200:
+            ErrMessage.insert(0,"Post Request return Error message:")
+            raise Exception("\n".join(ErrMessage))
+        if DBFlag:
+            print "Debug - Post Return message:"
+            print "\n".join(ErrMessage)
+        ### Check if more operation is needed
+        print "Debug - parssing response ..... %d Lines" % len(Body)
+        Parser=HTMLState1(Body)
+        OptCfg={}
+        while Parser:
+            Tmp=Parser.Event()
+            if Tmp:
+                if Tmp[0] in OptCfg:
+                    OptCfg[Tmp[0]].append(Tmp[1])
+                else:
+                    OptCfg[Tmp[0]]=[Tmp[1]]
+            Parser=Parser.Next()
+        if 'File' in OptCfg:
+            with open(os.path.basename(OptCfg['File'][0]),'w') as File:
+                File.writelines(OptCfg['Content'])
+            Runner=Executer(Template.RunMode,self.Instance[0].ip_address,
+                            SSHPath=Conf['[System]SSH'] if '[System]SSH' in Conf else None ,
+                            SShKey=Template.KeyFileName)
+            Runner.Copy((os.path.basename(OptCfg['File'][0]),OptCfg['File'][0]))
+        if not 'Status' in OptCfg:
+            raise Exception("php Installation phase failed - Responce from Mantis server:\n%s" % "\n".join(Body))
+
+        print "Login to Local Server: %s" % OptCfg['Url']
+
+
+class ManagentServer(VmGen):
+    def Install(self):
+        (Conn,Templ)=self.Info
+        MachineList=self.LunchMachine("""#!/bin/bash
+        echo Management > /etc/INFO""")
+        #MachineList=LunchMachine(Templ,300)
+        if MachineList:
+            CreateWebInstace(MachineList[0].public_dns_name,Templ)
+
 
 class System(object):
     def Build(self):
         self.Sys={}
         TreadPool=[]
-        print "Debug - Active Threadss Before Running %d" % threading.activeCount()
+        if DBFlag: print "Debug - Active Threadss Before Running %d" % threading.activeCount()
         for Role,topology in self.__Topology.items():
             for Count in xrange(topology[1]):
                 TmpInst=topology[0](self.__Template)
@@ -280,15 +523,18 @@ class System(object):
                     Thread.join(1)
                     #Flag=True
                     break
-        print "Debug - active threads after wait ... %d" % threading.activeCount()
+        if DBFlag: print "Debug - active threads after wait ... %d" % threading.activeCount()
         if threading.activeCount() > 1:
             for Inst in self.Sys.values():
                 for RInst in Inst:
                     RInst.Stop()
             raise Exception("Timout !!!!!   Main Thread should stop all other installation process .....")
         Instances=[]
+        DBHost=self.Sys['DbServer'][0].Instance[0]
         for InstList in self.Sys['WebServer']:
-            ##InstList=WebServer()
+            #InstList=WebServer()
+            InstList.SecPhase(DBHost.ip_address,
+                int(self.__Conf['[System]IntPort']) if '[System]IntPort' in self.__Conf else 80)
             Instances.extend(InstList.Instance)
         self.Build_LB(*Instances)
         self.ShowBalancer()
@@ -332,6 +578,7 @@ class System(object):
 
     def __ReadSys(self):
         self.Sys={}
+        RunningList=[]
         ## get Only instances that are in running state
         for InstStae in self.__AwsConnection.get_all_instance_status():
             if InstStae.system_status.status == 'ok':
@@ -339,66 +586,144 @@ class System(object):
                 #print "Debug Instance %s - Status %s" % (InstStae.id,InstStae.state_name)
             else:
                 print "Warning - Instance %s system status is %s" % (InstStae.id,InstStae.system_status.status)
-
-
-    def Monitor(self):
-        RunningList=[]
-        for InstStae in self.__AwsConnection.get_all_instance_status():
-            if InstStae.system_status.status == 'ok':
-                RunningList.append(InstStae.id)
-                #print "Debug Instance %s - Status %s" % (InstStae.id,InstStae.state_name)
-            else:
-                print "Warning - Instance %s system status is %s" % (InstStae.id,InstStae.system_status.status)
         if len(RunningList):
-            SubNets=[]
+            SShPath=self.__Conf['[System]SSH'] if '[System]SSH' in self.__Conf else None
             for Inst in self.__AwsConnection.get_only_instances(RunningList):
                 Runner=Executer(self.__Template.RunMode,Inst.ip_address,self.__Template.User,
-                                SSHPath=Conf['[System]SSH'] if '[System]SSH' in Conf else None ,
+                                SSHPath=SShPath ,
                                 SShKey=self.__Template.KeyFileName )
                 Runner.RunCmds('cat /etc/INFO') #'cat /var/lib/cloud/instance/user-data.txt',
                 Mtch=re.search('(\S+)',Runner.LastLog()[-1])
-                Role=Mtch.group(1) if Mtch else Runner.LastLog()[-1]
-                print "\nInstance - %s Role %s (%s)" % (Inst.id,Role if Role in self.__Topology else "UnKnown",Role)
-                print "\tPublic IP %s" % Inst.ip_address
-                print "\tPublic DNs %s" % Inst.public_dns_name
-                print "\tPrivate IP %s" % Inst.private_ip_address
-                print "\tZone      %s"  % Inst.placement
-                print "\tStatus    %s" % Inst.state
-                print "\tVPC       %s" % Inst.vpc_id
-                print "\tSubNet    %s" % Inst.subnet_id
-                SubNets.append(Inst.subnet_id)
-                print "< ----  End Record ---->"
-        else:
-            print "- No Running Instances found ..."
-
-        print "ELB Section ....."
-
-        print self.__AwsConnection.region.name
+                Role=Mtch.group(1) if Mtch else "Unknown"
+                if not Role in self.__Topology:
+                    Server=VmGen(self.__Template)
+                    print "Warning - Unknown server role %s (%s)" % (Role,Runner.LastLog()[-1])
+                    Role="Unknown"
+                else:
+                    Server=self.__Topology[Role][0](self.__Template)
+                Server.Load(Inst.id)
+                if Role in self.Sys:
+                    self.Sys[Role].append(Server)
+                else:
+                    self.Sys[Role]=[Server,]
+        ### Read Balancer configuration
         ElbConn=boto.ec2.elb.connect_to_region(self.__AwsConnection.region.name,
                                         aws_access_key_id=self.__AwsConnection.access_key,
                                         aws_secret_access_key=self.__AwsConnection.aws_secret_access_key)
-        print "Debug - Connection Info"
-        #print ElbConn
-        #ttt=ElbConn.get_all_load_balancers()
-        #print "Debug - get all balancers pass"
-        #print ttt
-        print ElbConn.get_all_load_balancers()
-        WebPort=int(self.__Conf['[System]IntPort']) if '[System]IntPort' in self.__Conf else 80
-        LBPort= int(self.__Conf['[System]ExtPort']) if '[System]ExtPort' in self.__Conf else 80
-        #self.__Elb=ElbConn.create_load_balancer("MantisServic",None,[(LBPort,WebPort,'HTTP',),],SubNets)
-        #print self.__Elb
-        for Elb in ElbConn.get_all_load_balancers():
-            #Elb=ElbConn.create_load_balancer()
-            #Elb=boto.ec2.elb.LoadBalancer()
-            print "Balncer %s Info:" % Elb.name
-            print "\tInstances: %s" % Elb.instances
-            print "\tZones:     %s" % Elb.availability_zones
-            print "\tConnect URL:%s" % Elb.dns_name
-            print "\tListieners:%s"  % Elb.listeners
-            print "<======= END Balancer Record ============>"
+        ELBList=ElbConn.get_all_load_balancers()
+        if len(ELBList) > 1:
+            print "Warning - There are %d Balancers in the system" % len(ELBList)
+            print "  Balancers: %s" % ", ".join([elb.name for elb in ELBList])
+            print "    Retreive only the First."
+        self.__Elb=ELBList[0] if len(ELBList) else None
+
+    def Monitor(self):
+        self.__ReadSys()
+        PrintInstance(self.__AwsConnection)
+        self.ShowBalancer()
+        print "Debug - System topolgy:"
+        for Role,Obj in self.Sys.items():
+            print "%s - %s" % (Role,Obj)
+        Min=int(self.__Conf['[System]MinInstance']) if '[System]MinInstance' in self.__Conf else 2
+        Max=int(self.__Conf['[System]MaxInstance']) if '[System]MaxInstance' in self.__Conf else 2
+        if not 'WebServer' in self.Sys or len(self.Sys['WebServer']) < Min:
+            print "Warning - not enough WebServers"
+            print "Starting Web servers ..."
+            Count=(Min - len(self.Sys['WebServer'])) if 'WebServer' in self.Sys else Min
+            while Count:
+                Count -= 1
+                TmpServer=WebServer(self.__Template)
+                TmpServer.Install()
+                if 'WebServer' in self.Sys:
+                    self.Sys['WebServer'].append(TmpServer)
+                else:
+                    self.Sys['WebServer']=[TmpServer,]
+            ### Update Balancer
+            #self.__Elb=boto.ec2.elb.LoadBalancer()
+            self.__Elb.deregister_instances(self.__Elb.instances)
+            NewInstances=[]
+            for Server in self.Sys['WebServer']:
+                NewInstances.extend(Server.get_Inst_id_List)
+            self.__Elb.register_instances(NewInstances)
+            self.Monitor()
+        elif len(self.Sys['WebServer']) > Max:
+            print "Warning - too much WebServers terminate some"
+            SaveInst=[Inst.id for Inst in self.__Elb.instances]
+            for Server in self.Sys['WebServer']:
+                #Server=WebServer()
+                for Inst in Server.Instance:
+                    if not Inst.id in SaveInst:
+                        print "Terminating %s" % Inst.id
+                        Inst.terminate()
+            self.Monitor()
+        else:
+            print "Describe system ...."
+            print "Build HTML Status page"
+            Rows=[]
+
+            for Role,Servers in self.Sys.items():
+                Server=[]
+                for Singl in Servers:
+                    Server.extend(Singl.Instance)
+                for TmpInst in Server:
+                    #TmpInst=boto.ec2.instance.Instance()
+                    Columns=['<td>%s</td>' % TmpInst.id ,
+                             '<td>%s</td>' % Role ,
+                             '<td>%s</td>' % TmpInst.ip_address ,
+                             '<td>%s</td>' % TmpInst.public_dns_name ,
+                             '<td>%s</td>' % TmpInst.placement ,
+                             '<td>%s</td>' % TmpInst.state ]
+                    Rows.append("\t<tr>\n\t\t%s\n\t</tr>" % "\n\t\t".join(Columns))
+            if len(Rows):
+                Table="""<h1>System Status</h1>
+                <table>
+                %s
+                </table>""" % "\n\t".join(Rows)
+            else:
+                Table="<h1>System has no running instances ...<h1>"
+            if self.__Elb:
+                Columns=[ 'Create Date', self.__Elb.created_time ,
+                          'Instances', " ,".join([Inst.id for Inst in self.__Elb.instances]) ,
+                          'Listeners', " ;".join([str(Lst) for Lst in self.__Elb.listeners]) ]
+                Tds=[]
+                for Str in Columns:
+                    Tds.append('\t\t<td>%s</td>' % Str)
+                    if not len(Tds) % 2 :
+                        Tds.extend(["\t</tr>","\t<tr>"])
+                Btext="""<h2>Balancer %s Configuration</h2>
+                 <table>
+                 <tr>
+                 %s
+                 </tr>
+                 </table>""" % (self.__Elb.name,"\n".join(Tds))
+            else:
+                Btext="<h2>No Blancer Defined for this system</h2>"
+            if 'Management' in self.Sys:
+                Link=self.Sys['Management'][0].Instance
+                Btext += '\n<a href="http://%s/Status.html">System Status Refres</a>' % Link[0].public_dns_name
+            with open("Status.html","w") as File:
+                File.writelines(Table)
+                File.writelines(Btext)
+            if 'Management' in self.Sys:
+                Link=self.Sys['Management'][0].Instance[0]
+                Runner=Executer(self.__Template.RunMode,Link.ip_address,self.__Template.User,
+                                SSHPath=self.__Conf['[System]SSH'] if '[System]SSH' in self.__Conf else None ,
+                                SShKey=self.__Template.KeyFileName)
+                Runner.Copy(('Status.html','/var/www/html/Status.html'))
 
 
-
+    def Backup(self):
+        self.__ReadSys()
+        if 'DbServer' in self.Sys:
+            Instances=[]
+            for Server in self.Sys['DbServer']:
+                Instances.extend(Server.Instance)
+            VolumeList=self.__AwsConnection.get_all_volumes(filters={'attachment.instance-id' : Instances[0].id})
+            #### Create snapshot just to one DB Server - Just one server should exists
+            SnapName="DbBackup-%s" % time.time()
+            print "Info - Create Snapshot %s" % SnapName
+            self.__AwsConnection.create_snapshot(VolumeList[0].id,
+                                                 "Automatic Snapshot of DB server - done by Backup script")
 
 
     def Clear(self):
@@ -433,7 +758,7 @@ class System(object):
 
     __Topology= { 'DbServer'  : [DbServer,1] ,
                   'WebServer' : [WebServer,2] ,
-                  'Management' : [VmGen,1]}
+                  'Management' : [ManagentServer,1]}
 
     def CheckRegion(self,RegName):
         ## Checkk Avaolable EC2 Regions
@@ -461,21 +786,32 @@ class System(object):
                                         aws_access_key_id=Conf['[System]aws_access_key_id'],
                                         aws_secret_access_key=Conf['[System]aws_secret_access_key'])
         self.__Template=MachineTemplate(self.__AwsConnection,self.__Conf)
+        self.__Elb=None
 
     def ShowBalancer(self):
-        ELb=getattr(self,'__Elb')
-        if ELb:
-            print "Balancer %s Configuration: ...." % ELb.name
-            ELb=self.__Elb=boto.ec2.elb.LoadBalancer()
-            print ELb.created_time
-            print "Balancer Acces Url: %s" % ELb.dns_name
-            print ELb.instances
-            print ELb.health_check
-            print ELb.listeners
-            print ELb.policies
-            print ELb.scheme
-            print ELb.vpc_id
+        #ELb=getattr(self,'__Elb',None)
+        if self.__Elb:
+            print "Balancer %s Configuration: ...." % self.__Elb.name
+            #ELb=self.__Elb=boto.ec2.elb.LoadBalancer()
+            print self.__Elb.created_time
+            print "Balancer Acces Url: %s" % self.__Elb.dns_name
+            print self.__Elb.instances
+            print self.__Elb.health_check
+            print self.__Elb.listeners
+            print self.__Elb.policies
+            print self.__Elb.scheme
+            print self.__Elb.vpc_id
             print "==============================="
+
+    def Test(self):
+        print "Running Tests ...."
+        self.__ReadSys()
+        Server=self.Sys['WebServer'][0]
+        DBSer=self.Sys['DbServer'][0]
+        #DBSer=DbServer()
+        #Server=WebServer()
+        Server.SecPhase(DBSer.Instance[0].private_ip_address)
+
 
 
 
@@ -880,6 +1216,30 @@ def CheckInstall(AwsConn,Conf):
 ###############################################################################
 
 
+#with open('C:\Users\dkreda\Documents\Projects\Amazon\Res.html','r') as F:
+#    Result={}
+#    Con=F.readlines()
+#    Parser=HTMLState1(Con)
+#    while Parser:
+#        Tmp=Parser.Event()
+#
+#        if Tmp:
+#            print Tmp
+#            if Tmp[0] in Result:
+#                Result[Tmp[0]].append(Tmp[1])
+#            else:
+#                Result[Tmp[0]]=[Tmp[1]]
+#        Parser=Parser.Next()
+
+#print "Debug - Finish to Parse File:"
+#for k,v in Result.items():
+#    print "%s : ##>%s<##" % (k,"".join(v))
+#print Result
+#exit()
+
+
+
+
 ConfFileName=sys.argv[1] if len(sys.argv) > 1 else "config.txt"
 Conf=Ini.INIFile(ConfFileName)
 
@@ -889,25 +1249,35 @@ Conf=Ini.INIFile(ConfFileName)
 #
 ###############################################################################
 ## Create Balancer
-
+DBFlag=Conf['[System]debug'] if '[System]debug' in Conf else False
+if DBFlag: print "Debug - Debug Flag is ON !"
 MainSys=System(Conf)
-print "Debug ----- Terminate initialization"
 
-if len(sys.argv) > 2:
-    if sys.argv[2] == 'Cleaner':
-        MainSys.Clear()
-        #Clear(AwsConn)
-    elif sys.argv[2] == 'Builder':
-        MainSys.Build()
-        #Build(AwsConn,Conf)
-    elif sys.argv[2] == 'Monitor':
-        print "Test - Not Ready yet ..."
-        MainSys.Monitor()
-        #CheckInstall(AwsConn,Conf)
-    else:
-        print "Unsuported command %s" % sys.argv[2]
+if len(sys.argv) > 3:
+    try:
+        SleepTime=int(sys.argv[3])
+    except:
+        print "Warning - Third argument (%s) is not a number - skip crontab mode." % sys.argv[3]
+        print "\tsee usage for more details"
 else:
-    print "missing command ...."
+    SleepTime=0
+CmdMap={ 'Cleaner' : MainSys.Clear ,
+         'Builder' : MainSys.Build ,
+         'Monitor' : MainSys.Monitor ,
+         'Backup'  : MainSys.Backup ,
+         'Test'    : MainSys.Test }
+if len(sys.argv) < 2:
+    print "Usage:%s ConfFile (%s) [Repeat each n sec]" % (__name__,','.join(CmdMap.keys()))
+    raise Exception("Missing command - see usage.")
+
+First=True
+while First:
+    if sys.argv[2] in CmdMap:
+        CmdMap[sys.argv[2]]()
+    else:
+        print "Usage:%s ConfFile (%s) [Repeat each n sec]" % (__name__,','.join(CmdMap.keys()))
+        raise Exception("Unsuport command %s" % sys.argv[2])
+    First = SleepTime
 
 exit()
 
