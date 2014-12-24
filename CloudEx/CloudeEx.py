@@ -45,6 +45,9 @@ class MachineTemplate(object):
         self.__Conf=Conf
         self.__AMI=self.__getAMI()
         self.ResetZones()
+        ## Just verify we have a key ...
+        if not self.__getKey():
+            raise Exception("Fail to create Key")
 
 
     def ResetZones(self):
@@ -105,7 +108,7 @@ class MachineTemplate(object):
             Count = 3
             while not os.path.exists(self.KeyFileName) and Count:
                 print "Note - please save the private Key File %s.ppk" % KeyName
-                print "       in %s" % os.path.abspath()
+                print "       in %s" % os.path.abspath(self.KeyFileName)
                 print "       and exit from Pygen program"
                 Flag=os.system(Cmd)
                 if Flag:
