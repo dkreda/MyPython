@@ -150,7 +150,6 @@ class MachineTemplate(object):
                 raise Exception('Fail to save public key file %s.pem' % KeyName)
             return self.__getKey()
 
-
 class VmGen(object):
     def Install(self):
         print "-- Install Process not ready yet ..."
@@ -191,8 +190,6 @@ class VmGen(object):
         #self.__Conn=boto.ec2.EC2Connection()
         self.__Instance=self.__Conn.get_only_instances(InstanceID)
         #(Conn,Templ)=self.Info
-
-
 
     def LunchMachine(self,StartScript=None,**Tags):
     ##   Todo - add placement parameter (Zone to instance definition ....
@@ -304,7 +301,6 @@ class HTMLState1(object):
                 print self.EventFlag
             return self if self.Line_Num < len(self.Content) else None
 
-
 class HTMLState2(HTMLState1):
     def StartOps(self):
         self.__Chk1=re.compile('<pre>(.+?)(<|$)')
@@ -397,8 +393,6 @@ class HTMLState5(HTMLState1):
     def Next(self):
         return None if self.EventFlag or self.Line_Num >= len(self.Content) else self
 
-
-
 class WebServer(VmGen):
     def Install(self):
         (Conn,Templ)=self.Info
@@ -486,7 +480,6 @@ class WebServer(VmGen):
 
         print "Login to Local Server: %s" % OptCfg['Url']
 
-
 class ManagentServer(VmGen):
     def Install(self):
         (Conn,Templ)=self.Info
@@ -541,7 +534,6 @@ class System(object):
             Instances.extend(InstList.Instance)
         self.Build_LB(*Instances)
         self.ShowBalancer()
-
 
     def Build_LB(self,*InstaceList):
         print "\n\nDebug - Start Build Load Balancer ...."
@@ -714,7 +706,6 @@ class System(object):
                                 SShKey=self.__Template.KeyFileName)
                 Runner.Copy(('Status.html','/var/www/html/Status.html'))
 
-
     def Backup(self):
         self.__ReadSys()
         if 'DbServer' in self.Sys:
@@ -727,7 +718,6 @@ class System(object):
             print "Info - Create Snapshot %s" % SnapName
             self.__AwsConnection.create_snapshot(VolumeList[0].id,
                                                  "Automatic Snapshot of DB server - done by Backup script")
-
 
     def Clear(self):
         RunningList=[Inst.id for Inst in self.__AwsConnection.get_all_instance_status()]
@@ -815,98 +805,6 @@ class System(object):
         #Server=WebServer()
         Server.SecPhase(DBSer.Instance[0].private_ip_address)
 
-
-
-
-
-
-#def LunchMachine(AwsConn,Template):
-def LunchMachine(Template,TimeOut=300,StartScript=None,**Tags):
-    #AwsConn=boto.ec2.connect_to_region()
-    ##Template=MacineTempl()
-    #Template=MachineTemplate()
-    AwsConn=Template.AwsConnection
-    ##   Todo - add placement parameter (Zone to instance definition ....
-    MachineInstance=AwsConn.run_instances(Template.AMI,instance_type=Template.Type,key_name=Template.Key,
-                                          #user_data=base64.b64encode(StartScript) if StartScript else None ,
-                                          user_data=StartScript ,
-                                          additional_info='Made automaticly by script ...')
-    print "Debug - Machine created :"
-    WaitList=[]
-    for Inst in MachineInstance.instances:
-        print "Debug - Starting %s" % Inst.id
-        Inst.start()
-        WaitList.append(Inst.id)
-    ### Wait Instance is up
-    print "Debug - Wait boot process to finish ..."
-    ## Just wait all instances go to running mode
-    TimeCount=TimeOut
-    while len(AwsConn.get_all_instance_status(WaitList)) < len(WaitList) and TimeCount:
-        time.sleep(1)
-        TimeCount -= 1
-    ## Instances running wait boot process terminate
-    if TimeCount:
-        Flag=True
-        while Flag and TimeCount > 0:
-            Gap=TimeCount % 3 if TimeCount % 3 else 3
-            time.sleep(Gap)
-            TimeCount -= Gap
-            Flag=len(WaitList)
-            for TmpStat in AwsConn.get_all_instance_status(WaitList):
-                if re.search('ok',TmpStat.system_status.status):
-                    Flag -= 1
-                elif not TimeCount % 30:
-                    print "\t... Machine %s still booting (%d Sec)" % (TmpStat.id,TimeOut-TimeCount)
-        if not Flag:
-            ## All Instancess Finished to boot
-            Result=[]
-            for Reserved in AwsConn.get_all_instances(WaitList):
-                Result.extend(Reserved.instances)
-            print "Debug - system boot Took %d Sec" % (TimeOut-TimeCount)
-            return Result
-        else:
-            print "Error - TimeOut waiting Boot Finish:"
-            for TmpStat in AwsConn.get_all_instance_status(WaitList):
-                print "\t- %s Machine Status: %s , System Status: %s" % (TmpStat.id,TmpStat.state_name,
-                                            TmpStat.system_status.status)
-                print "\t\t > %s" % TmpStat.system_status.details
-            raise Exception("TimeOut - waiting too mach for boot process")
-    else:
-        print "Error - TimeOut waiting Boot Finish:"
-        for TmpStat in AwsConn.get_all_instance_status(WaitList):
-            print "\t- %s Machine Status: %s , System Status: %s" % (TmpStat.id,TmpStat.state_name,
-                                            TmpStat.system_status.status)
-            print "\t\t > %s" % TmpStat.system_status.details
-        raise Exception("TimeOut - waiting too mach for boot process")
-
-
-def Clear(AwsConn):
-    RunningList=[Inst.id for Inst in AwsConn.get_all_instance_status()]
-    Count=5
-    while len(RunningList) and Count:
-        StopedList=AwsConn.terminate_instances(RunningList)
-        for Inst in StopedList:
-            RunningList.remove(Inst.id)
-        if len(RunningList):
-            time.sleep(3)
-        Count -= 1
-    if len(RunningList):
-        print "Error - Fail to terminate the following Instances:"
-        print "\t%s" % "\n\t".join(RunningList)
-        raise Exception("Faile to terminate some instances")
-    ### Verify all Instances Terminated
-    for Reserv in AwsConn.get_all_instances():
-        for Inst in Reserv.instances:
-            if not Inst.state == 'terminated':
-                print "Warning - Instance %s have not terminated !" % Inst.id
-                Inst.terminate()
-
-    PrintInstance(AwsConn)
-
-
-
-
-#def InstallSql(Host,Conf,KeyFile):
 def InstallSql(Host,Template):
     VerMap={ "Linux/el6" : 'mysql-community-release-el6-5.noarch.rpm' ,
              "Windows/7" : 'mysql-community-release-el6-5.noarch.rpm' }
@@ -968,6 +866,12 @@ def InstallSql(Host,Template):
     ## for more details: http://dev.mysql.com/doc/mysql-yum-repo-quick-guide/en/
 
 class Executer(object):
+    ###############################################################################
+    #  This class is simlify Remote commnds - by calling ssh or expect.
+    #
+    #
+    ###############################################################################
+
     Mode_Login='Expect'
     Mode_Remote='SSH'
     Mode_Local='Local'
@@ -1164,94 +1068,14 @@ def FindLinuxImage(AwsCon,Debug=False):
     print "\n\nprint Toal Images %d\nMatch Images %d\n\n" % (Count,len(ImageList))
     return ImageList[0]
 
-def Build(AwsConn,Conf):
-    ## Templ=MacineTempl('WebServer',[],AMIid=BaseAMI.id,KeyName=KeyName)
-    Templ=MachineTemplate(AwsConn,Conf)
-    ## Create Web instances
-    WebMa=LunchMachine(Templ)
-    DbMa=LunchMachine(Templ)
-    print "\n\n\n<<====   After Creation !!!!  =====>>>>\n"
-    PrintInstance(AwsConn)
-    AttrList=['id','state','public_dns_name','launch_time','placement','virtualization_type']
-    for Attr in AttrList:
-        print "%-15s: %s" % (Attr,getattr(WebMa[0],Attr,"No Attribute !"))
-    print "<< ---- E N D ---- >>\n\n"
-
-    #InstallSql(WebMa[0].public_dns_name,Conf,"./%s.pem" % KeyName)
-    InstallSql(DbMa[0].public_dns_name,Templ)
-    CreateWebInstace(WebMa[0].public_dns_name,Templ)
-    #PrintInstance(AwsConn)
-    print "\n\nFinish to create Machines:"
-    print "DataBase:   ssh - %s" % DbMa[0].public_dns_name
-    print "Web Server: ssh - %s" % WebMa[0].public_dns_name
-    print "Install Mantis: http://%s/mantisbt/admin/install.php" % WebMa[0].public_dns_name
-    print "tcpdump ...."
-
-def CheckInstall(AwsConn,Conf):
-    ##AwsConn=boto.ec2.connect_to_region()
-    ### Go Over all instances
-    for Inst in AwsConn.get_all_instance_status():
-        if not Inst.system_status.status == 'ok':
-            continue
-        Machine=AwsConn.get_all_instances([Inst.id])[0].instances[0]
-        print "Check - Configuration of Instance %s" % Machine.id
-        IntUrl="http://%s/mantisbt/admin/install.php" % Machine.public_dns_name
-        print "Debug - Check connection to %s" % IntUrl
-        HttpConn=httplib.HTTPConnection(Machine.public_dns_name,timeout=5)
-        Req=HttpConn.request("GET",IntUrl)
-        print "Debug - Request Retun :"
-        print Req
-        Res=HttpConn.getresponse()
-        if Res and Res.status == 200:
-            print "Debug Return Responce 200 from %s" % Machine.id
-            print "Headers - "
-            print Res.msg
-            print "-------"
-            print Res.read()
-            print "-------"
-        else:
-            print "Info Intance %s is not Mantis" % Machine.id
-
 ###############################################################################
 #
 #  M A I N
 #
 ###############################################################################
-
-
-#with open('C:\Users\dkreda\Documents\Projects\Amazon\Res.html','r') as F:
-#    Result={}
-#    Con=F.readlines()
-#    Parser=HTMLState1(Con)
-#    while Parser:
-#        Tmp=Parser.Event()
-#
-#        if Tmp:
-#            print Tmp
-#            if Tmp[0] in Result:
-#                Result[Tmp[0]].append(Tmp[1])
-#            else:
-#                Result[Tmp[0]]=[Tmp[1]]
-#        Parser=Parser.Next()
-
-#print "Debug - Finish to Parse File:"
-#for k,v in Result.items():
-#    print "%s : ##>%s<##" % (k,"".join(v))
-#print Result
-#exit()
-
-
-
-
 ConfFileName=sys.argv[1] if len(sys.argv) > 1 else "config.txt"
 Conf=Ini.INIFile(ConfFileName)
 
-###############################################################################
-#
-#  Builder
-#
-###############################################################################
-## Create Balancer
 DBFlag=Conf['[System]debug'] if '[System]debug' in Conf else False
 if DBFlag: print "Debug - Debug Flag is ON !"
 MainSys=System(Conf)
@@ -1281,53 +1105,4 @@ while First:
         print "Usage:%s ConfFile (%s) [Repeat each n sec]" % (__name__,','.join(CmdMap.keys()))
         raise Exception("Unsuport command %s" % sys.argv[2])
     First = SleepTime
-
-exit()
-
-Region=Conf['[System]region']
-JustName=re.compile('Info:(.+)')
-RegNames=[]
-for Reg in boto.ec2.elb.regions():
-    Chk=JustName.search(str(Reg))
-    if Chk :
-         RegNames.append(Chk.group(1))
-if not Region in RegNames:
-    raise Exception("there is no Balancer resources at region %s. available regoines: %s" % \
-                        (Region,"\n\t".join(RegNames)))
-
-
-hcParams={}
-if '[System]IntPort' in Conf:
-    hcParams['target']='TCP:%s' % Conf['[System]IntPort']
-if '[System]Health_Check_Interval' in Conf:
-    hcParams['interval']=int(Conf['[System]Health_Check_Interval'])
-
-HealthChk=boto.ec2.elb.HealthCheck(**hcParams)
-
-print "Debug - Check HealthCheck :"
-print hcParams
-
-AwsConn=boto.ec2.connect_to_region(Region,aws_access_key_id=Conf['[System]aws_access_key_id'],
-                                        aws_secret_access_key=Conf['[System]aws_secret_access_key'])
-
-##print "Debug - Connection Finished"
-##print AwsConn
-if len(sys.argv) > 2:
-    if sys.argv[2] == 'Cleaner':
-        Clear(AwsConn)
-    elif sys.argv[2] == 'Builder':
-        Build(AwsConn,Conf)
-    elif sys.argv[2] == 'Test':
-        CheckInstall(AwsConn,Conf)
-    else:
-        print "Unsuported command %s" % sys.argv[2]
-else:
-    print "missing command ...."
-
-##Stam=pyssh.test()
-
-## Create DataBase
-
-## Create Managemnt
-
-### Start intsllations on instances ...
+    if SleepTime: time.sleep(SleepTime)
