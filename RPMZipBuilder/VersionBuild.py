@@ -103,7 +103,11 @@ class VersionTree(object):
     def Update(self,CompItem):
         if not ( CompItem.Name in self.__CompList and self.__CompList[CompItem.Name] >= CompItem):
             ## print "Debug - Update %s to version %s" % (CompItem.Name,CompItem.Version)
+            ## print "Debug -        %d            %d" % (self.__CompList[CompItem.Name].Date if CompItem.Name in self.__CompList else -1,
+            ##                                           CompItem.Date)
             self.__CompList[CompItem.Name] = CompItem
+        #else:
+        #    print "Debug ---   Skip %s (%s , %s)" % (CompItem.Name,self.__CompList[CompItem.Name].Path,CompItem.Path)
 
     def __contains__(self, item):
         return item in self.__CompList
@@ -132,7 +136,9 @@ class TreeBuilder(object):
             if self.__Debug:
                 print "Debug - Search Folder: %s" % Folder
             Tmp=self.__StrSearch(Folder)
+            #print "Debug ------ Init  Merges Main Tree with Result From: %s" % Folder
             if Tmp: self.__Tree += Tmp
+            #print "Debug -----------------------------------------------------------------\n"
         #return self
 
     def __FolderSearch(self,Folder):
@@ -155,7 +161,9 @@ class TreeBuilder(object):
         else:
             for FileName in os.listdir(Folder):
                 Tmp=self.__FolderSearch("%s/%s" % (Folder,FileName) )
+                #print "-----DDD -----   Folder Search Update Files (%s)" % Folder
                 if Tmp: VersionList += Tmp
+                #print "----DDD -----   Finish Update Files (%s)" % Folder
         return VersionList
 
     def __ZipSearch(self,ZipFile):
@@ -174,22 +182,28 @@ class TreeBuilder(object):
     def __StrSearch(self,Folder):
         TmpMatch=self.RegExpDir.match(Folder) #   re.match(r'(.+?)([^\/\\]*\*[^\/\\]*)(.*)$',Folder)
         if TmpMatch:
+            if self.__Debug: print "Debug - __StrSearch(%s)" % Folder
             VersionList=VersionTree()
             BaseF=TmpMatch.group(1)
             FName=TmpMatch.group(2)
             suffix=TmpMatch.group(3)
+            if self.__Debug: print "Debug - __StrSearch - BasF is (%s)" % BaseF
             if not os.path.exists(BaseF):return None
             FStr=re.sub(r'\*',r'.*',FName,flags=re.DOTALL)
             Filter=re.compile(FStr)
             #print "Debug - Seraching Base Dir %s" % BaseF
             for Files in os.listdir(BaseF):
+                #print "Debug - Check %s =~ /%s/" % (Files,FStr)
                 Tmp=Filter.match(Files)
                 if Tmp:
                     FullPath="%s%s%s" % (BaseF,Files,suffix)
                     TmpResult=self.__StrSearch(FullPath)
+                    if self.__Debug: print "Debug - __StrSearch: Merge %s <= %s" % (Folder,FullPath)
                     if TmpResult: VersionList += TmpResult
+                    if self.__Debug: print "Debug - __StrSearch: %s Merge Finish" % Folder
             return VersionList
         else:
+            #print "---- Debug ::::  calling __FolderSearch(%s)" % Folder
             return self.__FolderSearch(Folder)
 
     @property
