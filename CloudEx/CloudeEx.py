@@ -296,8 +296,8 @@ class HTMLState1(object):
         else:
             #self.__Indx +=1
             if self.Line_Num > (len(self.Content) - 6):
-                print "Debug - Line %d of %d" % (self.Line_Num,len(self.Content))
-                print self.Line
+                #print "Debug - Line %d of %d" % (self.Line_Num,len(self.Content))
+                #print self.Line
                 print self.EventFlag
             return self if self.Line_Num < len(self.Content) else None
 
