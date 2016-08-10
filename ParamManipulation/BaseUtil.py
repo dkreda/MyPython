@@ -2,7 +2,7 @@ __author__ = 'dkreda'
 
 import Ini
 import xml.etree.ElementTree as XmlLib
-import re,sys,time
+import re,sys,time,os
 
 
 class ParamRuleEq(object):
@@ -137,7 +137,7 @@ class Handler():
                 tmpStr=tmpMatch.group(2)
                 tmp=tmpStr.find('[')
                 if tmp < 0 : tmp=2
-                self.__Path= tmpMatch.group(3) + tmpStr[tmp:]
+                self.__Path= tmpStr[tmp:] + tmpMatch.group(3)
             else:
                 raise SyntaxError('fail to resolve file name or parameter path from "%s"' % pPath)
 
@@ -185,39 +185,51 @@ class Manipulator():
     def paramName(self):
         return self.__Name
 
-class FileHandler():
+class FileHandler(object):
 
     def __init__(self,FilePath):
-        tmpFh=open(FilePath,'r')
+        #tmpFh=open(FilePath,'r')
         self.__FileName=FilePath
-        self.Content=tmpFh.readall()
-        tmpFh.close()
+        #self.Content=tmpFh.readall()
+        #tmpFh.close()
+
+    @property
+    def getFileName(self):
+        return self.__FileName
+
+    def Backup(self):
+        IncNum=0
+        bFile=self.__FileName + '.Backup.%f' % (time.time() + IncNum)
+        while os.path.exists(bFile):
+            IncNum += 1
+            bFile=self.__FileName + '.Backup.%f' % (time.time() + IncNum)
+        os.rename(self.__FileName,bFile)
+        return bFile
 
     def setParam(self,pPath,pVal):
         pass
 
-    def Commit(self):
-        tmpFh=open(self.__FileName,'w')
-        tmpFh.write("\n".join(self.Content))
-        tmpFh.close()
 
 
 class FileHandler_Ini(FileHandler):
 
     def __init__(self,FilePath):
+        super(FileHandler_Ini,self).__init__(FilePath)
         self.Handler=Ini.INIFile(FilePath)
 
     def setParam(self,pPath,pVal):
         self.Handler.SetParam(pPath,pVal)
 
     def Commit(self):
-        self.Handler.WriteFile()
+        if self.Backup():
+            self.Handler.WriteFile()
 
 class FileHandler_xml(FileHandler):
     def __init__(self,FilePath):
         #tmpFh=open(FilePath,'r')
         #self.Content=tmpFh.readall()
-        self.__FileName=FilePath
+        #self.__FileName=FilePath
+        super(FileHandler_xml,self).__init__(FilePath)
         self.Handler=XmlLib.parse(FilePath)
         self.Root=self.Handler.getroot()
 
@@ -229,11 +241,20 @@ class FileHandler_xml(FileHandler):
             xmlIter.text=pVal
 
     def Commit(self):
-        self.Handler.write(self.__FileName)
+        if self.Backup():
+            self.Handler.write(self.getFileName)
         #pass
 
 class FileHandler_txt(FileHandler):
     RegEx_txtParam=re.compile('(\[(.+?)\])*(.+)')
+
+    def __init__(self,FilePath):
+        super(FileHandler_txt,self).__init__(FilePath)
+        tmpFh=open(FilePath,'r')
+        #self.__FileName=FilePath
+        self.Content=tmpFh.readlines()
+        tmpFh.close()
+
     def setParam(self,pPath,pVal):
         tmpMatch=FileHandler_txt.RegEx_txtParam.match(pPath)
         pName=tmpMatch.group(3)
@@ -253,20 +274,29 @@ class FileHandler_txt(FileHandler):
                 aStr=None
                 bStr=tmpMatch.group(2)
 
-            switchs.replace(tmpMatch.group(1) + tmpMatch.group(2) ,'')
+            switchs=switchs.replace(tmpMatch.group(1) + tmpMatch.group(2) ,'')
             if switchs.find('v') < 0 : switchs += 'v '
+        else:
+            repStr=None
+            aStr=None
+            bStr=None
 
         tmpMatch=re.search('v(.)',switchs)
         vSep=tmpMatch.group(1) if tmpMatch else None
-        pSep=re.search('s(.)',switchs).groups(1)
+        tmpMatch=re.search('s(.)',switchs)
+        pSep= tmpMatch.group(1) if tmpMatch else ' '
         lFlag=False if switchs.find('l') < 0 else True
-        #LineTriger=re.compile(pName)
-        #MultiVal=True
+        ChangeFlag=False
         for LineNum in xrange(len(self.Content)):
             lastPos=self.Content[LineNum].find(pName + pSep)
+            if LineNum > 230:
+                a=self.Content[LineNum]
+                b=pName + pSep
+                print "...."
             if lastPos < 0: continue
-            if not self.Content[LineNum][:lastPos].isspace() : continue
+            if lastPos > 0 and not self.Content[LineNum][:lastPos].isspace() : continue
             Parts=self.Content[LineNum].split(pSep,1)
+            print "Debug -- Find the Parameter at Line " , LineNum
             if repStr:
                 Parts[1].replace(repStr,pVal)
             elif aStr:
@@ -283,10 +313,18 @@ class FileHandler_txt(FileHandler):
                     if Parts[1][index] == vSep : break
                 Parts[1] = Parts[1][:index] + pVal + vSep + Parts[1][index:]
             elif vSep:
-                Parts[1] = Parts[1] + vSep + pVal if lFlag else pVal + vSep + Parts[1]
+                Parts[1] = Parts[1].rstrip() + vSep + pVal +"\n" if lFlag else pVal + vSep + Parts[1]
             else:
                 Parts[1]=pVal
             self.Content[LineNum]=pSep.join(Parts)
+            ChangeFlag=True
+        if not ChangeFlag: self.Content.append(pSep.join((pName,pVal + "\n")))
+
+    def Commit(self):
+        if self.Backup():
+            tmpFh=open(self.getFileName,'w')
+            tmpFh.write("".join(self.Content))
+            tmpFh.close()
 
 
 
@@ -311,12 +349,12 @@ class Logger():
     Level=BaseEnum("Debug","Info","Warning","Error","Fatal")
     def __init__(self,LogFile,ExposeLevel,Prefix=""):
         print Logger.Level
-        self.__fh=None
         self.Prefix=Prefix
         self.exLevel=ExposeLevel
         try:
-            self.__fh=open(LogFile,'a')
+            self.__fh=open(LogFile,'a') if LogFile else None
         except IOError , e:
+            self.__fh=None
             self.WrLog(Logger.Level.Error,'Fail to open/write "%s"' % LogFile,"writing log to the screen only")
 
 
@@ -339,11 +377,14 @@ class ParamDeployer():
     RegEx_Macro=re.compile('%\$(.+?)%')
     RegEx_Param=re.compile('[^\\\\]{(\S+?)}')
     RegEx_HandlerStr=re.compile('(.+),(\S{3}):\/\/(.+)')
-    def __init__(self,**params):
+    def __init__(self,LogObj=None,**params):
+        #print "Log INput: " , LogObj
+        self.__Log=LogObj if LogObj else Logger(None,Logger.Level.Debug)
         self.Params=params
         self.Manipulators=[]
         self.Handlers={}
         self.Macros={}
+        self.__ErrorList=[]
 
     def addManipulator(self,Manip):
         self.Manipulators.append(Manip)
@@ -363,33 +404,59 @@ class ParamDeployer():
             hType=tmpMatch.group(2)
             param=tmpMatch.group(3)
             self.addHandler(Handler(pName,hType,param,*unitList.split(',')))
+        else:
+            self.__Log.WrLog(Logger.Level.Fatal,hStr)
+            raise SyntaxError("Ilegal parameter definition:",hStr)
 
-    def setParams(self):
+    def setParams(self,Unit):
+        self.__Log.WrLog(Logger.Level.Debug,"set Values to files/Execute for Unit %s" % Unit)
         for (pType,File) in self.Handlers.items():
-            for (fName,pRec) in File.items():
+            self.__Log.WrLog(Logger.Level.Debug,"setting %s files" % pType)
+            #for pRec in File:
+            for (fName,pList) in File.items():
                 # Todo - Update the correct Handler (acording to file type)
                 # Fix the paramPath + Fname to be extract ....
-                pRec=Handler()
-                if pRec.getParamType == 'txt':
-                    FileH=FileHandler_txt(pRec.getFileName)
-                    FileH.setParam(pRec.getParamPath,self.Params[pRec.getParamName])
-                elif pRec.getParamType == 'ini':
-                    FileH=FileHandler_Ini(pRec.getFileName)
-                    FileH.setParam(pRec.getParamPath,self.Params[pRec.getParamName])
-                elif pRec.getParamType == 'xml' :
-                    FileH=FileHandler_xml(pRec.getFileName)
-                    FileH.setParam(pRec.getParamPath,self.Params[pRec.getParamName])
-                elif pRec.getParamType == 'cmd':
-                    Log.WrLog(Logger.Level.Debug,"Command handler not implemented yet")
-                else:
-                    Log.WrLog(Logger.Level.Error,"Unsuported File Type " + pRec.getParamType)
-                #FileH=FileHandler(fName)
+                #pRec=Handler()
+                self.__Log.WrLog(Logger.Level.Debug,"setting %s" % fName)
+                try:
+                    if pType == 'txt':
+                        FileH=FileHandler_txt(fName)
+                        #FileH.setParam(pRec.getParamPath,self.Params[pRec.getParamName])
+                    elif pType == 'ini':
+                        FileH=FileHandler_Ini(fName)
+                        #FileH.setParam(pRec.getParamPath,self.Params[pRec.getParamName])
+                    elif pType == 'xml' :
+                        FileH=FileHandler_xml(fName)
+                        #FileH.setParam(pRec.getParamPath,self.Params[pRec.getParamName])
+                    elif pType == 'cmd':
+                        Log.WrLog(Logger.Level.Debug,"Command handler not implemented yet")
+                    else:
+                        Log.WrLog(Logger.Level.Error,"Unsuported File Type " + pRec.getParamType)
+                        continue
+                    #FileH=FileHandler(fName)
+                except IOError , e:
+                    self.__Log.WrLog(Logger.Level.Error,"Fail to open/read/write to %s" % fName ,
+                                     e.strerror,e.message)
+                    continue
+                for pRec in pList:
+                    if pType != 'cmd':
+                        if pRec.isInUnit(Unit):
+                            FileH.setParam(pRec.getParamPath,self.Params[pRec.getParamName])
+                            self.__Log.WrLog(Logger.Level.Debug,"update %s in %s" %
+                                             (pRec.getParamName,pRec.getFileName))
+                    else:
+                        self.__Log.WrLog(Logger.Level.Warning,"Running Command (Not Implemented)")
+                if pType != 'cmd' : FileH.Commit()
 
-            FileH.Commit()
+    @property
+    def Errors(self):
+        return len(self.__ErrorList)
 
     def addMacros(self,**macros):
         for (mName,mVal) in macros.items():
-            self.Macros[mName]=self.extractText(mVal)
+            self.Macros[mName]=mVal
+            #self.Macros[mName]=self.extractText(mVal)
+
 
     def extractText(self,Text):
         ## extract Macros ##
@@ -420,12 +487,14 @@ class ParamDeployer():
         return '='.join(NewLine)
 
     def ManipulatParams(self):
+        self.__Log.WrLog(Logger.Level.Debug,"Start Manipulating Parameters")
         for ManRule in self.Manipulators:
             #ManRule=Manipulator()
             pVal=self.Params[ManRule.paramName]
             for (pName,rVal) in ManRule.calculate(pVal).items():
                 self.Params[pName]=self.extractText(rVal)
-                print "set param " , pName , " to " , self.Params[pName]
+                self.__Log.WrLog(Log.Level.Info,'set "%s" to %s' % (pName,self.Params[pName]))
+                #print "set param " , pName , " to " , self.Params[pName]
 
 def ReadCLI():
     Pattern=re.compile("-+(.+)")
@@ -454,7 +523,11 @@ def ReadCLI():
 #print ttt.lastindex
 #print ttt.lastgroup
 #print ttt.groups()
-
+#a=time.time()
+#for i in xrange(5):
+#    a=time.time()
+#    print "Backup.%f" % a
+#print a,":",a.__class__
 #sys.exit(0)
 
 if __name__ == '__main__':
@@ -526,13 +599,15 @@ if __name__ == '__main__':
 
         ### Add Handlers:
         #aa=IniParser.Section('RealName.Parameters.Def')
-        RecPattern=re.compile('(.+),(\S{3}):\/\/(.+)')
-        ParamPattern=re.compile('(.+?)\/([\/\[]+)(.+)')
-        for pRec,pName in IniParser.getParams('RealName.Parameters.Def').items():
+        #RecPattern=re.compile('(.+),(\S{3}):\/\/(.+)')
+        #ParamPattern=re.compile('(.+?)\/([\/\[]+)(.+)')
+        for pName,pRec in IniParser.getParams('RealName.Parameters.Def').items():
             #print Record , xxx
             OctObj.addHandlerStr(pRec,pName)
 
         Log.WrLog(Logger.Level.Info,"Finish to parse File ...")
         Log.WrLog(Logger.Level.Info,"Start Parameters Manipulation")
         OctObj.ManipulatParams()
+        Log.WrLog(Logger.Level.Info,"Start setting parameters in files.")
+        OctObj.setParams(Conf['Unit'])
 

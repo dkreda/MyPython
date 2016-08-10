@@ -1,2 +1,0 @@
-user1,Mail:stam@gmail.com,Empty
-user2,SMS:054666451442,No description

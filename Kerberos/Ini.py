@@ -1,6 +1,5 @@
 #!/usr/bin/python
 ######################
-##  Check Remarks
 #  This is Generic module which handle Reading and writing Ini files.
 #
 # 2 Main Classes are used:
@@ -11,16 +10,14 @@
 import sys,re
 
 class BaseFile(object):
-    ### This is basic File Handle that Rerad Ascii file to memory and save it
+    ### This is basic File Handle that Read Ascii file to memory and save it
     def __init__(self,FileName):
         self.FileName=FileName
         self.ReadFile()
     def ReadFile(self):
        print "Debug Going to read from %s" % self.FileName
        TmpFHandle=open(self.FileName)
-       ##self.Content=[Line.strip() for Line in TmpFHandle.readlines()]
        self.Content=TmpFHandle.readlines()
-       ##self.Content=[Line.rstrip() for Line in TmpFHandle.readlines()]
        TmpFHandle.close()
     def WriteFile(self):
         TmpFHandle=open(self.FileName,"w")
@@ -87,11 +84,9 @@ class INIFile(BaseFile):
 
    IniPathPattern=re.compile(r"\[(.+)\](\S+)")
    def __init__(self,FileName):
-       # print "Debug - IniFile Init"
        super(INIFile,self).__init__(FileName)
        self.__Parse()
-       #print "Debug - End of INIFile Init ...."
-       
+
    def __Parse(self):
        self.__SecMap={}
        LastMatch=None
@@ -165,40 +160,3 @@ class MultiIni(object):
             if Tmp:
                 Result.extend(Tmp)
         return Result
-
-if __name__ == "__main__":
-    FName=raw_input("Enter File to read: ")
-    while FName:
-        TestClass=BaseFile(FName)
-        print TestClass.Content[0]
-        FName=raw_input("Enter File to read: ")
-    FName=raw_input("Enter Ini File to read:")
-    TestClass=INIFile(FName)
-    print "List of Sections:\n -%s" % '\n -'.join(TestClass.getSecList())
-    Sec=raw_input("Enter Section:")
-    Pattern=raw_input("Enter Parameter Pattern:")
-    print "List of all Match at section %s :" % Sec
-    Tmp=TestClass.FindAllParams(Pattern)
-    print '\n'.join(Tmp)
-    print "Param Value of %s" % Tmp[-1]
-    print TestClass[Tmp[-1]]
-
-    print "Does File Changed %s" % TestClass.Changed
-
-    TestClass['[test2]Yofi']="This is New Value for Exising Parameter"
-    TestClass['[test2]NewParam']="New Parameter in this Section !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-
-    print "".join(TestClass.Content)
-
-    print "\n\nDoes File Changed %s" % TestClass.Changed
-    TestClass.SetParam("[test2]Yofi","Tofi")
-    TestClass.SetParam("test2","Bilby","Tofi")
-    TestClass.SetParam("test2","ok",6)
-    TestClass.SetParam("[New Section]Yofi","Tofi")
-    TestClass.SetParam("[Sec with Spaces]par2","Tofi")
-    print TestClass.Content
-    print TestClass.Section(Sec)
-    print TestClass.getParams(Sec)
-    for i in TestClass.Content:
-        print i 
-    TestClass.WriteFile()

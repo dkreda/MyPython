@@ -1,76 +1,57 @@
 __author__ = 'dkreda'
-
+###############################################################################
+#                                                                             #
+# This file serves as MAIN program that implement a Server that is a member   #
+# in kerberos domain. The server just read the message from client and send   #
+# simple string as response.                                                  #
+# This show how to implement a server using the "GeneralServer" class.        #
+# All you have to do is overwrite the method additionalService - and write    #
+# all the service work at this method.                                        #
+# usage: ServerSim.py [serverName]                                            #
+#    if no parameters at CLI it would load the server configuration           #
+#    from kerberosConfiguration.conf                                          #
+#    if "ServerName" is given it would load the configuration from the        #
+#     kerberos dataBase (from ServerList.csv)                                 #
+###############################################################################
 import KerberosServer,PkgHandle
-import time,sys
+import time,sys,thread
 
-class ServerSimulation(KerberosServer.Kr_AbstractServer):
-    def ServerInit(self,Config):
-        #Config=dict()
-        if Config.has_key('DB'):
-            DataBaseObj=KerberosServer.DBWrapper(Config['DB'])
-            DataBaseObj=DataBaseObj.Connect()
-            tmpRec=DataBaseObj.getServerRecord(Config['Name'])
-            #PkgHandle.HostRec(ServerRec[0],ServerRec[1])
-            #tmpRec=KerberosServer.ServerRecord()
-            HostConf=PkgHandle.HostRec(tmpRec.Name,tmpRec.Address)
-            self.port=HostConf.Port
-            self.myKey=tmpRec.Key
-            self.WriteLog("Debug","Load configuration from Kerberos DataBase")
-            #self.DBName=Config['File']
-            #for ServerRec in self.LoadDB():
-            #    if ServerRec[0] == Config['Name']:
-            #        tmpRec=PkgHandle.HostRec(ServerRec[0],ServerRec[1])
-            #        self.port=tmpRec.Port
-            #        self.myKey=ServerRec[2]
-            #        self.WriteLog("Debug","Load configuration from Kerberos DataBase")
-            #        break
-        else:
-            self.myKey=Config['Key']
-        self.WriteLog("Info","configuration loaded")
-
-    def VerifyRequest(self,Request,ClientAddr):
-        #Request=PkgHandle.ServiceRequest()
-        tmpEncObj=PkgHandle.EncObj(self.myKey,Request.Ticket,self.EncryptMethod)
-        Ticket=tmpEncObj.getObj()
-        if type(Ticket) is PkgHandle.Ticket:
-            #Ticket=PkgHandle.Ticket()
-            tmpEncObj=PkgHandle.EncObj(Ticket.Key,Request.Auth,self.EncryptMethod)
-            AuthRec=tmpEncObj.getObj()
-            #AuthRec=PkgHandle.AuthRec()
-            if type(AuthRec) is PkgHandle.AuthRec:
-                if AuthRec.TimeStamp + int(Ticket.LifeTime) >=time.time():
-                    if AuthRec.user == Ticket.user and AuthRec.sessionID == Ticket.sessionID and \
-                        AuthRec.TimeStamp == Ticket.TimeStamp and AuthRec.userAddr == Ticket.userAddr:
-                        self.WriteLog("Info","Authentication pass O.K")
-                        Tkt=PkgHandle.BasicRec(AuthRec.TimeStamp + 1)
-                        return (Tkt,Ticket.Key)
-                    else:
-                        self.WriteLog("Debug","Ticket     : " + str(Ticket))
-                        self.WriteLog("Debug","Auth Record: " + str(AuthRec))
-                        self.WriteLog("Error","Authentication Failed (Auth and Tickrt don't match)")
-                else:
-                    self.WriteLog("Error","Session LifeTime expired")
-            else:
-                self.WriteLog("Error","Authentication failed (wrong key)")
-        else:
-            self.WriteLog("Error","Authentication failed (wrong key)")
-        return None
-
-    def BuildResponse(self,Ticket,Key):
-        Response=Ticket  #  PkgHandle.BasicRec(Ticket)
-        EncAnswer=PkgHandle.EncObj(Key,Response,self.EncryptMethod)
-        self.WriteLog("Debug","Build Response: " + str(Response.TimeStamp) )
-        return EncAnswer._Obj
+class ServerSimulation(KerberosServer.GeneralServer):
+    def additionalService(self,ServerSocket):
+        try:
+            Request=ServerSocket.recv(2048)
+            self.WriteLog("Info","Server received from client:",Request)
+            ServerSocket.send("O.K - Ready to serve...")
+            ServerSocket.close()
+        except IOError , e:
+           self.WriteLog("Error","Fail to continue session with client", e.strerror , e.filename )
 
 if __name__ == '__main__' :
     Config={}
     if len(sys.argv) > 1:
-        print "Loading configuration from CLI"
+        DBConnection='file@DataBase/ServerList.csv'
+        print "Loading configuration of %s (Read from DataBase)" % sys.argv[1]
         Config['Name']=sys.argv[1]
-        Config['File']='ServerList'
-        Config['DB']='file@ServerList'
-    Simulator=ServerSimulation(**Config)
-    Simulator.StartServer()
-    time.sleep(200)
-    Simulator.StopServer()
+        DataBaseObj=KerberosServer.DBWrapper(DBConnection)
+        DataBaseObj=DataBaseObj.Connect()
+        tmpRec=DataBaseObj.getServerRecord(Config['Name'])
+        if tmpRec is not None:
+            HostConf=PkgHandle.HostRec(tmpRec.Name,tmpRec.Address)
+            Config['Port']=HostConf.Port
+            Config['Key']=tmpRec.Key
+            Config['LogFile']='C:\\Temp\\%s.log' % sys.argv[1]
+            Config['Encrypt']='Simple'
+        else:
+            raise KerberosServer.ServerFatal("Fail to find %s in DataBase" % sys.argv[1])
+    else:  # Load Configuration from File configuration
+        iniFile='Configuration/kerberosConfiguration.conf'
+        iniObj=PkgHandle.Config(iniFile)
+        Config=iniObj.ServerConfiguration
 
+    Simulator=ServerSimulation(**Config)
+    # we start the server in separate thread just to limit the server
+    # period running
+    thread.start_new_thread(Simulator.StartServer,())
+    time.sleep(1)
+    if Simulator.Running:  time.sleep(200)
+    Simulator.StopServer()

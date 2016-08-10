@@ -1,113 +1,201 @@
 __author__ = 'dkreda'
-
-import sys,os,re,time
-import random
-#import pickle      ### serialization Module
+###############################################################################
+#                                                                             #
+# This file serves as MAIN program that implement Kerberos servers            #
+# and as module which supply base classes to implement servers that wish to   #
+# run kerberos authentication before serving a user.                          #
+# classes that may be used (in module mode:                                   #
+# GeneralServer - Regular server that check kerberos ticket before start      #
+#                 serving                                                     #
+# Kr_TGSServer - Implemnts TGS Server                                         #
+# Kr_AuthServer - implements AS Server                                        #
+###############################################################################
+import sys,re,time,random
 import PkgHandle
 import string
 import socket
-import thread
-from abc import abstractmethod,abstractproperty
+import thread,threading,traceback
+from abc import abstractmethod
 
 class BaseClass(object):
+    # Base Class: set basic methods /utilities that all
+    # Kerberos subclass requires
+    # Configuration Parameters this class requires:
+    # Name - string
+    # optional parameters
+    # Encrypt - Encrypt method to use. valid values: AES,Simple
+    # LogFile - name of the logfile to write to. Default - No Log (just print to screen)
     def __init__(self,**Config):
-        self.LogFile=Config.get('LogFile')
         self.Name=Config.get('Name')
-        self.WriteLog("Debug","Test multi Message log","This is the second line")
+        self.EncryptMethod=Config.get('Encrypt','Simple')
+        self.__Lock=threading.RLock()
+        self.__LogFile=False
+        try:
+            self.__LogFile=open(Config.get('LogFile'),'w+')
+            self.WriteLog("Info","open new log file " + Config['LogFile'])
+        except TypeError , e:
+            self.WriteLog("Error","Log File is not available","missing LogFile configuration")
+        except IOError , e:
+            self.WriteLog("Error","Log File is not available",e.strerror)
+        ### Verify Encrypt Method
+        try:
+            Dummy=PkgHandle.EncObj('dummyKey',None,self.EncryptMethod)
+        except TypeError , e:
+            ErrorMessage="Wrong configuration " + e.message
+            self.WriteLog("Error", ErrorMessage)
+            raise ServerFatal(ErrorMessage)
 
     def WriteLog(self,Level,*Messages):
         prefix="(%s)," % self.Name if self.Name else ""
         prefix='%-6s %s%s: ' % (Level,prefix,time.asctime()) if Level else ""
+        mList=[]
         for line in Messages:
-            print prefix , line
+            mList.append( prefix + line )
+            #print prefix , line
             prefix = ' ' * len(prefix)
-        #OutMessage = "%-6s (%s),%s: %s" % (Level,self.Name,time.asctime(),Message) if Level else Message
-        #print OutMessage
+        ### Lock this section just in case several threads may write to the log
+        ### This may be very rare that several threads will write to the log
+        ### cause python do not run multipy threads (it runs thread just if the
+        ### other are in block state - waiting for an IO or system request termination)
+        self.__Lock.acquire()
+        print "\n".join(mList)
+        if self.__LogFile:
+            #self.__LogFile.writelines("\n".join(mList))
+            self.__LogFile.write("\n".join(mList))
+            self.__LogFile.write("\n")
+            self.__LogFile.flush()
+        ### Release the lock
+        self.__Lock.release()
+
+    def stopLog(self):
+        if self.__LogFile:
+            self.__LogFile.close()
 
     def GenerateKey(self,Size):
+        # Generates random Key of Size Bytes
+        # Size - the length of Key in Bytes
         self.WriteLog("Debug","Generate Special Key of Size %d" % (Size))
         Chars=string.ascii_letters + string.digits
         return "".join(random.choice(Chars) for i in xrange(Size))
 
     def Title(self,*Text):
         Size=80
-        self.WriteLog('','*' * Size)
-        for line in Text:
-           self.WriteLog('',"* %-*s*" % (Size - 3 , line))
-        self.WriteLog('','*' * Size)
+        MessageList=["* %-*s*" % (Size - 3 , line) for line in Text ]
+        MessageList.insert(0,'*' * Size)
+        MessageList.append('*' * Size)
+        self.WriteLog('',*MessageList)
 
 class Kr_AbstractServer(BaseClass):
+    # Server Ancestor Class: Every server type should inherent this class
+    # Configuration Parameters this class requires:
+    # Name - string
+    # Port - integer 1 - 65535. the port this server should listen
+    # optional parameters
+    # LogFile - name of the logfile to write to. Default - No Log (just print to screen)
+    # Encrypt - Encrypt method to use. valid values: AES,Simple
+    # MaxConnect - Number of maximum active open connections. Default 3
+    # LifeTime - period of Ticket Life Time in sec units. Default - 120 sec
     def __init__(self,**Config):
-        super(Kr_AbstractServer,self).__init__(**Config)
-        self.MaxConnect=int(Config.get('MaxConnect',3))
-        self.port=int(Config.get('Port',0))
-        self.LifeTime=int(Config.get('LifeTime',120))
-        self.EncryptMethod=Config.get('Encrypt','Simple')
-        self.Running=False
-        self.ServerInit(Config)
+        try:
+            super(Kr_AbstractServer,self).__init__(**Config)
+            self.MaxConnect=int(Config.get('MaxConnect',3))
+            self.port=int(Config.get('Port',0))
+            self.LifeTime=int(Config.get('LifeTime',120))
+            self.EncryptMethod=Config.get('Encrypt','Simple')
+            self.Running=False     # use to control the server operation
+            self.ServerInit(Config)
+        except ServerFatal ,e:
+            raise e
+        except KeyError , e:
+            raise ServerFatal("missing configuration Parameters (%s)" % e.message )
+        except BaseException , e:
+            raise ServerFatal("Fail to initial Server: " + e.message)
 
     @abstractmethod
     def ServerInit(self,Config):
         pass
 
     def StartServer(self):
-        self.Running=True
-        ServerSocket=socket.socket()
-        ServerSocket.bind(('',self.port))
-        ServerSocket.listen(self.MaxConnect)
-        ### Verify Encryption method
         try:
-            test=PkgHandle.EncObj('123',None,self.EncryptMethod)
-            ### Title Print
-            self.Title("Server " + self.Name + " is up" ,
-                        "Listen at Port %d" % self.port )
+            ServerSocket=socket.socket()
+            ServerSocket.bind(('',self.port))
+            ServerSocket.listen(self.MaxConnect)
             self.ControlSock=ServerSocket
-            thread.start_new_thread(self.Listen,(ServerSocket,))
-        except TypeError , e:
-            self.WriteLog("Error","Wrong configuration " + e.message ,
-                          "Server " + self.Name + " Failed to start")
-
+            self.Running=True
+        except socket.error , e:
+            self.WriteLog("Error","Fail to listen on Port %d" % self.port ,
+                          "verify the port is not in usage or fix the configuration" ,
+                           e.strerror, e.message  )
+            raise ServerFatal("Fail to listen on Port %d" % self.port )
+        self.Title("Server " + self.Name + " is up" ,
+                   "Listen at Port %d" % self.port )
+        self.Listen(ServerSocket)
 
     @abstractmethod
     def VerifyRequest(self,Request,ClientAddr):
+        # This method should return tuple (Rec,Key)
+        # Rec - a Rec that should be read by BuildResponse method.
+        # Key - the key to use to encrypt the response
         pass
 
     def BuildTicket(self,UserName,Server,SessionID,ClientAddress):
         TimeStamp=time.time()
         Key=self.GenerateKey(16)
-        return PkgHandle.Ticket(TimeStamp,UserName,SessionID,ClientAddress,Server,Key,self.LifeTime)
+        tmp = PkgHandle.KrTicket(TimeStamp,UserName,SessionID,ClientAddress,Server,Key,self.LifeTime)
+        return tmp
 
     @abstractmethod
     def BuildResponse(self,Ticket,Key):
-        ## Key is the Kry for entire message encryption
-        ## The Ticket will be encrypt using the Server->Key
-        print "Debug - Abstract Responce"
+        ## Key is the Key for entire message encryption
+        ## Ticket - is a record the should contain relevant info to build response
+        pass
 
     def additionalService(self,ServerSocket):
         pass
 
+    def runRequest(self,ConnectSocket):
+        # handle active connection with client.
+        # this method should run in separate thread to avoid DOS in case the operation
+        # takes too long ....
+        Request=PkgHandle.Message(ConnectSocket.recv(2048))
+        Address=ConnectSocket.getpeername()[0]
+        self.WriteLog("Info","Start Thread session " + str(thread.get_ident()))
+        try: # make sure exception would terminate the connection gracefully
+            Response=self.HandleRequest(Request.getRecord(),Address)
+            if Response:
+                ResMessage=PkgHandle.Message(Response)
+                ConnectSocket.send(ResMessage.ObjStr)
+                self.additionalService(ConnectSocket)
+            else:
+                self.WriteLog("Error","Fail to handle request from Client " + Address )
+                ConnectSocket.send("Error Request rejected")
+        except ServerFatal , e:
+            self.WriteLog("Error",'send error message to client: "%s"' % e.KrMessage)
+            ConnectSocket.send("Error " + e.KrMessage )
+        except ValueError , e:
+            self.WriteLog("Error","Fail to retrieve message from client " + Address,
+                              e.message)
+            ConnectSocket.send('Error corrupted message' + Request.ObjStr)
+        self.WriteLog("Debug","Finished Thread handling " +  str(thread.get_ident()))
+
     def Listen(self,ServerSock):
+        # handle the Listen socket and open a new thread for each connection.
         while self.Running:
             (Content,Address)=ServerSock.accept()
             self.WriteLog("Info","Received Req from " + Address[0])
-            Request=PkgHandle.Message(Content.recv(2048))
-            Response=self.HandleRequest(Request.getRecord(),Address[0])
-            if Response:
-                ResMessage=PkgHandle.Message(Response)
-                Content.send(ResMessage.ObjStr)
-                self.additionalService(Content)
-            else:
-                self.WriteLog("Error","Fail to handle request from Client " + Address[0] )
-                Content.send("Error Request rejected")
-            Content.close()
-        self.WriteLog("Info","Server finished to listen ....")
+            thread.start_new_thread(self.runRequest,(Content,))
+        self.WriteLog("Info","Finished Listening")
 
     def StopServer(self):
         self.Running=False
         self.ControlSock.close()
         self.WriteLog("Info","Stop due to request")
+        self.stopLog()
 
     def HandleRequest(self,Request,ClientAddr):
+        # handle kerberos request.
+        # Request - any kerberos request type.
+        # ClientAddr - String, the client address (IP part)
         (Ticket,Key)=self.VerifyRequest(Request,ClientAddr)
         if Key:
             self.WriteLog("Info","Request Verification Pass O.K.")
@@ -119,188 +207,273 @@ class Kr_AbstractServer(BaseClass):
             return False
 
 class Kr_AuthServer(Kr_AbstractServer):
-
+    # This class implements the ASServer
+    # Configuration Parameters this class requires:
+    # Name - string
+    # Port - integer 1 - 65535. the port this server should listen
+    # DB - connection string to database.
+    # TGSServerName - the key name of TGS Server in the database.
+    # optional parameters
+    # LogFile - name of the logfile to write to. Default - No Log (just print to screen)
+    # Encrypt - Encrypt method to use. valid values: AES,Simple
+    # MaxConnect - Number of maximum active open connections. Default 3
+    # LifeTime - period of Ticket Life Time in sec units. Default - 120 sec
     def VerifyRequest(self,Request,ClientAddr):
         if hasattr(Request,'Server'):
-            #client=self._retreiveClient(Request.User)
+            # Verify the request have the relevant fields.
             client=self.DataBase.getClientRecord(Request.User)
             if type(None) == type(client):
-                self.WriteLog("Error","Request with unknown user Reject.")
-                return (None,None)
+                self.WriteLog("Error","user %s Rejected." % Request.User)
+                raise ServerFatal("user %s Rejected." % Request.User)
+            else:
+                self.WriteLog("Debug","Client %s from %s has SPE entity: %s" %
+                              (client.name,ClientAddr,client.spe.SPEType))
             tmpspe=client.spe
+            # Generate random key and send via the SPE
             ClientKey=self.GenerateKey(6)
             tmpspe.sendMessage(ClientKey)
             Session=self._getSessionID(Request.User,Request.Server)
             Tkt=self.BuildTicket(Request.User,Request.Server,Session,ClientAddr)
             return (Tkt,ClientKey)
         else:
-            self.WriteLog("Error","Illegal Request from client " + self._getClientAddress())
-            return None
+            self.WriteLog("Error","Illegal Request from client " + ClientAddr)
+            raise ServerFatal("corrupted Message")
 
     def addClient(self,Client):
+        # Update database with new client record.
         self.DataBase.addClient(Client)
-        #self.userConf[Client.name]=Client
 
-    def LoadTGSKey(self):
-        self.TGSKey=self.DataBase.getServerKey('TGS')
-        return
-        tmp=self.DBName
-        self.DBName=self.ServersDB
-        for RecTuple in self.LoadDB():
-            #print "Debug --- RecTuple " ,RecTuple.__class__
-            #print "Debug --- RecTuple Content: " ,RecTuple
-            if RecTuple[0] == 'TGS':
-                self.TGSKey=RecTuple[2]
-                break
-        self.DBName=tmp
-        self.WriteLog("Info","Load TGS Server Key (from DB)")
-        #print "Debug - " + self.Name + " Load TGS Key"
+    def LoadTGSKey(self,TGSServerName):
+        try:
+            self.TGSKey=self.DataBase.getServerKey(TGSServerName)
+        except:
+            raise ServerFatal('Fail to retrieve "%s" from DataBase' % TGSServerName )
 
     def _getSessionID(self,clientID,Server):
+        # Generate unique identify for current session.
         return "%d-%s%s-%s" % (random.randint(1000000,10000000),time.time(),clientID,Server)
-
 
     def ServerInit(self,Config):
         super(Kr_AuthServer,self).ServerInit(Config)
-        #self.DBName= Config.get('DB' , 'NA')
-        tmp=DBWrapper(Config.get('DB' , 'NA'))
-        self.DataBase=tmp.Connect()
-        #self.userConf={}
-        #self.ServersDB = Config.get('ServersDB', 'ServerList' )
-        #self.LoadUserDB()
-        self.LoadTGSKey()
+        try:
+            tmp=DBWrapper(Config.get('DB' , 'NA'))
+            self.DataBase=tmp.Connect()
+        except IOError , e:
+            self.WriteLog("Error","Fail to load/read/connect to DataBase" ,
+                          "Exception reason: " + e.message )
+            raise ServerFatal("Fail to load/read/connect to DataBase: " + e.message )
+        except Exception , e:
+            self.WriteLog("Error","Fail to load/read/connect to DataBase" ,
+                          "Exception reason: " + str(e.__class__)  ,
+                          e.message if e.message else "" )
+            raise ServerFatal("Fail to load/read/connect to DataBase: " + e.message , traceback)
+        self.LoadTGSKey(Config['TGSServerName'])
 
     def BuildResponse(self,Ticket,Key):
-        #Ticket=PkgHandle.Ticket()
-        #Tkt=PkgHandle.Ticket(timeStamp,client.name,SessionID,'tmp NA','TGS Server (My IP)',TktKey,LifeTime)
-        SerKey=self.TGSKey #    self._getTicketKey(Ticket.Server)
+        SerKey=self.TGSKey
         tmpEncObj=PkgHandle.EncObj(SerKey,Ticket,self.EncryptMethod)
-        answer=PkgHandle.ResMessageAS(Ticket.TimeStamp,Ticket.Key,tmpEncObj._Obj,Ticket.user,Ticket.sessionID,
+        answer=PkgHandle.ResMessageAS(Ticket.TimeStamp,Ticket.Key,str(tmpEncObj) ,Ticket.user,Ticket.sessionID,
                                       Ticket.LifeTime)
         self.WriteLog("Debug","Encrypt response using key " + Key)
         EncAnswer=PkgHandle.EncObj(Key,answer,self.EncryptMethod)
-        return EncAnswer._Obj
-
-    def printClients(self):
-        for cRec in self.userConf.items():
-            print cRec[0] , " >> " , cRec[1].spe
+        return str(EncAnswer)
 
 class Kr_TGSServer(Kr_AbstractServer):
-
-    def LoadServersKey(self):
-        counter=0
-        for RecTuple in self.LoadDB():
-            ServerRec=ServerRecord(RecTuple[0],RecTuple[1],RecTuple[2])
-            self.addServer(ServerRec)
-            counter+=1
-        self.WriteLog("Info","Load total %d Servers records " %  counter)
-
-    def addServer(self,Server):
-        if hasattr(Server,'Key'):
-            self.ServerList[Server.Name]=Server.Key
-        else:
-            self.WriteLog("Error","Illegal Server Record")
-
+    # This class implements the TGS Server
+    # Configuration Parameters this class requires:
+    # Name - string
+    # Port - integer 1 - 65535. the port this server should listen
+    # DB - connection string to database.
+    # optional parameters
+    # LogFile - name of the logfile to write to. Default - No Log (just print to screen)
+    # Encrypt - Encrypt method to use. valid values: AES,Simple
+    # MaxConnect - Number of maximum active open connections. Default 3
+    # LifeTime - period of Ticket Life Time in sec units. Default - 120 sec
     def ServerInit(self,Config):
         super(Kr_TGSServer,self).ServerInit(Config)
-        #self.keyList=[]
-        tmp=DBWrapper(Config.get('DB' , 'NA'))
-        #self.DBName=
-        self.DataBase=tmp.Connect()
+        try:
+            tmp=DBWrapper(Config.get('DB' , 'NA'))
+            self.DataBase=tmp.Connect()
+        except IOError , e:
+            self.WriteLog("Error","Fail to load/read/connect to DataBase" ,
+                          'Exception reason: %s "%s"' % (e.strerror,e.filename,) )
+            raise ServerFatal("Fail to load/read/connect to DataBase: " + e.strerror )
+        except Exception , e:
+            self.WriteLog("Error","Fail to load/read/connect to DataBase" ,
+                          "Exception reason: " + str(e.__class__)  ,
+                          e.message if e.message else "" )
+            raise ServerFatal("Fail to load/read/connect to DataBase: " + e.message , traceback)
 
     def _getTicketKey(self,Server):
         ## Find the Server Private Key
         return self.DataBase.getServerKey(Server)
-        #return self.ServerList[Server]
 
     def VerifyRequest(self,Request,ClientAddr):
         if hasattr(Request,'Tkt') and  hasattr(Request,'Auth'):
             Key=self.DataBase.getServerKey(self.Name)
-            #Key=self._getTicketKey(self.Name)
-            tmpEncObj=PkgHandle.EncObj(Key,Request.Tkt,self.EncryptMethod)
-            Ticket=tmpEncObj.getObj()
-            ### get Client-TGS Key
-            Key=Ticket.Key
-            tmpEncObj=PkgHandle.EncObj(Key,Request.Auth,self.EncryptMethod)
-            Auth=tmpEncObj.getObj()
-            #Ticket-PkgHandle.Ticket()
-            if Ticket.TimeStamp + Ticket.LifeTime >= time.time() :
-                if Ticket.sessionID == Auth.sessionID and Ticket.user == Auth.user and \
-                    Ticket.TimeStamp == Auth.TimeStamp:
-                    #Request=TicketRequest()
+            try: # verify Ticket and Auth Record can be decrypt.
+                tmpEncObj=PkgHandle.EncObj(Key,Request.Tkt,self.EncryptMethod)
+                Ticket=tmpEncObj.getObj()
+                Key=Ticket.Key
+                tmpEncObj=PkgHandle.EncObj(Key,Request.Auth,self.EncryptMethod)
+                Auth=tmpEncObj.getObj()
+            except Exception, e:
+                self.WriteLog("Error","Fail to decrypt parts of the request",e.message)
+                raise ServerFatal("Fail to read request. wrong key or wrong Cypher method")
+            # Verify Ticket is still relevant.
+            if not Ticket.expired:
+                # verify Ticket content
+                if Ticket.ValideAuthentication(Auth):
                     ServerTkt=self.BuildTicket(Auth.user,Request.Server,Auth.sessionID,ClientAddr)
                     return (ServerTkt,Ticket.Key)
                 else:
+                    self.WriteLog("Debug",str(Ticket),str(Auth))
                     self.WriteLog("Error","Authentication Failed. Auth Record don't match the Ticket request")
+                    raise ServerFatal("Auth Record don't match the Ticket data")
                     return (None,None)
             else:
                 self.WriteLog("Debug","Ticket expired at " + time.ctime(Ticket.TimeStamp + Ticket.LifeTime))
                 self.WriteLog("Error","Ticket period expired. Ignore the request")
+                raise ServerFatal("Ticket period expired. Session TimeOut")
                 return (None,None)
+        else: # this is not TGS request or the request message is corrupted
+            self.WriteLog("Error","corrupted or unsupported message request from " + ClientAddr)
+            raise ServerFatal("TGS Server received unsupported request type or corrupted request")
 
     def BuildResponse(self,Ticket,Key):
         try:
             SerKey=self._getTicketKey(Ticket.Server)
         except KeyError , e :
-            ErrorMessage="Server %s (or %s) are not memeber of this kerberos domain" % (Ticket.Server,e.message)
+            ErrorMessage="Server %s (or %s) are not member of this kerberos domain" % (Ticket.Server,e.message)
             self.WriteLog("Error",ErrorMessage)
             return "Error: " + ErrorMessage
         tmpEncObj=PkgHandle.EncObj(SerKey,Ticket,self.EncryptMethod)
-        answer=PkgHandle.ResMessageTGS(Ticket.TimeStamp,Ticket.Key,tmpEncObj._Obj)
+        answer=PkgHandle.ResMessageTGS(Ticket.TimeStamp,Ticket.Key,str(tmpEncObj))
         self.WriteLog("Debug","Encrypt TGS Server answer using Key " + Key )
         EncAnswer=PkgHandle.EncObj(Key,answer,self.EncryptMethod) # self.PassMap[Ticket.user],answer)
-        return EncAnswer._Obj
+        return str(EncAnswer)
+
+    def addServer(self,Server):
+        # update database with new server record
+        if hasattr(Server,'Key'):
+            self.ServerList[Server.Name]=Server.Key
+        else:
+            self.WriteLog("Error","Illegal Server Record")
+
+class GeneralServer(Kr_AbstractServer):
+    # This class should be ancestor or each Server that supports kerberos protocol
+    # Configuration Parameters this class requires:
+    # Name - string
+    # Port - integer 1 - 65535. the port this server should listen
+    # Key - the key to Decrypt the Ticket. This key must be the same as define at Kerberos DataBase !
+    # optional parameters
+    # LogFile - name of the logfile to write to. Default - No Log (just print to screen)
+    # Encrypt - Encrypt method to use. valid values: AES,Simple
+    # MaxConnect - Number of maximum active open connections. Default 3
+    # LifeTime - period of Ticket Life Time in sec units. Default - 120 sec
+    def ServerInit(self,Config):
+        self.myKey=Config['Key']
+        self.WriteLog("Info","configuration loaded")
+
+    def VerifyRequest(self,Request,ClientAddr):
+        tmpEncObj=PkgHandle.EncObj(self.myKey,Request.Ticket,self.EncryptMethod)
+        try:
+            Ticket=tmpEncObj.getObj()
+        except BaseException , e:
+            self.WriteLog("Error","Fail to decrypt Ticket" , "%s: %s" % (str(e.__class__),e.message))
+            Ticket = None
+        if type(Ticket) is PkgHandle.KrTicket:
+            # Verify the request is in the correct format.
+            tmpEncObj=PkgHandle.EncObj(Ticket.Key,Request.Auth,self.EncryptMethod)
+            AuthRec=tmpEncObj.getObj()
+            if type(AuthRec) is PkgHandle.AuthRec:
+                if not Ticket.expired:
+                    # verify the Ticket is NOT Expired
+                    if Ticket.ValideAuthentication(AuthRec):
+                        # verify the Ticket is valid (have the same value as in the Auth Record)
+                        self.WriteLog("Info","Authentication pass O.K")
+                        Tkt=PkgHandle.BasicRec(AuthRec.TimeStamp + 1)
+                        return (Tkt,Ticket.Key)
+                    else:
+                        self.WriteLog("Debug","Ticket     : " + str(Ticket))
+                        self.WriteLog("Debug","Auth Record: " + str(AuthRec))
+                        self.WriteLog("Error","Authentication Failed (Auth and Ticket don't match)")
+                        raise ServerFatal("Authentication Failed: Ticket and auth rec don't Match")
+                else:
+                    self.WriteLog("Error","user Session (%s) LifeTime expired" % Request.Auth.user)
+                    raise ServerFatal("Ticket period expired. Session TimeOut")
+            else:
+                self.WriteLog("Error","Authentication failed (wrong key)")
+                raise ServerFatal("Authentication failed. failed to read auth Record")
+        else:
+            self.WriteLog("Error","Authentication failed (wrong key)")
+            raise ServerFatal("Authentication failed. fail to read Ticket")
+        return (None,None)
+
+    def BuildResponse(self,Ticket,Key):
+        Response=Ticket
+        EncAnswer=PkgHandle.EncObj(Key,Response,self.EncryptMethod)
+        self.WriteLog("Debug","Build Response: " + str(Response.TimeStamp) )
+        return str(EncAnswer)
 
 class clientRecord(object):
-    def __init__(self,cName,speList,description):
+    # DataBase record.
+    def __init__(self,cName,spe,description):
         self.name=cName
-        self.spe=speList
+        self.spe=spe
         self.desc=description
 
 class ServerRecord(object):
+    # DataBase record
     def __init__(self,Name,Address,Key):
         self.Name=Name
         self.Address=Address
         self.Key=Key
 
-class TicketRequest(object):
-    ## Request for specific Service (Server)
-    def __init__(self,Service,Ticket,Auth):
-        self.Server=Service
-        self.Tkt=Ticket
-        self.Auth=Auth
-
 class abstractSPE(object):
+    # Ancestor SPE class - each inherit class must overwrite "sendMessage" method
+    # connectInfo syntax SPE_Type:Destination. example: Mail:user@maildomain
+    # this class DO NOT send message just print to screen.
     def __init__(self,connectInfo):
-        self.SPE=connectInfo
+        self.__SPE=connectInfo
 
     def sendMessage(self,message,**destConf):
+        # just print to screen the message.
         Size=50
+        MessageList=[ "SPE send message via " + self.SPEType ,
+                      "to " + self.SPEDest + ":",
+                      message]
         print '*' * Size
-        for line in ("SPE send message to client:",message,):
+        for line in MessageList:
            print "* %-*s*" % (Size - 3 , line)
         print '*' * Size
-        #print message
 
-class AuthReq(object):
-    def __init__(self,user,server,TimeStamp):
-        self.User=user
-        self.Server=server
-        self.TimeStamp=TimeStamp
+    @property
+    def SPEType(self):
+        SpeType=re.match("(\S+):",self.__SPE)
+        return SpeType.group(1) if SpeType.group(1) else 'N/A'
 
-    def __str__(self):
-        return "Request: Authentication: " + '||'.join((self.User,self.Server,str(self.TimeStamp)))
+    @property
+    def SPEDest(self):
+        speDest=self.__SPE.split(':')
+        return speDest[1] if speDest else 'N/A'
 
 class DBWrapper():
+    # wrapper for database handling.
+    # ConnectionStr - each database vendor has its own database string.
+    # Connect - this method acts as Factory Pattern - return new Object of type
+    #           that supports the required connection string. the return Object MUST
+    #           be child of DBWrapper class
+
     def __init__(self,ConnectionStr):
         #username[/password]@myserver[:port][/myservice:dedicated][/instancename]
-        #for file file@FileName/
+        #for file file@FileName
         self.__ConnStr=ConnectionStr
 
     def Connect(self):
+        # Factory pattern - return new object.
         if re.match('^file',self.__ConnStr,re.IGNORECASE):
             tmpObj=DBcsvWrapper(self.__ConnStr)
-            #return
         else:
             raise Exception("Unsupported DataBase connection type " + self.__ConnStr)
         tmpObj.Connect()
@@ -325,16 +498,22 @@ class DBWrapper():
         pass
 
 class DBcsvWrapper(DBWrapper):
+    # this class implements the csv database handler (read the data from csv files)
+    # connectStr syntax is file@path_to csv_file[@path_to csv_file]
+    #   where first file should be the servers list the second file (optional) is
+    #   the users definition file.
     def __init__(self,ConnectStr):
         self.fileList=ConnectStr.split('@')
         self.__clientList={}
         self.__ServerList={}
 
     def ReadCsv(self,FileName):
+        # read csv file and split the fields
         dBFile=open(FileName,'r')
         Result=[]
         for line in  dBFile:
-            clist=line.split(',')
+            tmp=line.strip("\n")
+            clist=tmp.split(',')
             Result.append(clist)
         dBFile.close()
         return Result
@@ -344,6 +523,7 @@ class DBcsvWrapper(DBWrapper):
         for RecTuple in self.ReadCsv(self.fileList[1]):
            self.addServer(ServerRecord(RecTuple[0],RecTuple[1],RecTuple[2]))
         if len(self.fileList) > 2:
+            # read clients list
             for RecTuple in self.ReadCsv(self.fileList[2]):
                 self.addClient(clientRecord(RecTuple[0],abstractSPE(RecTuple[1]),RecTuple[2]))
 
@@ -360,25 +540,32 @@ class DBcsvWrapper(DBWrapper):
         return self.__ServerList[Server].Key
 
     def getServerRecord(self,ServerName):
-        #Server=self.__ServerList.get(ServerName)
-        #Server=ServerRecord()
-        #if Server:
-        #    return PkgHandle.HostRec(Server.Name,Server.Address)
         return self.__ServerList.get(ServerName)
 
+##################################
+# Exception definition
+#################################
 
-
+class ServerFatal(Exception):
+    def __init__(self,*args,**Kwargs):
+        super(ServerFatal,self).__init__(*args,**Kwargs)
+        self.KrMessage=args[0] if len(args) > 0 else ""
 
 if  __name__ == '__main__' :
-    print "This is Server running (Not Module ...)"
-    ServerConf=PkgHandle.Config('kerberosConfiguration.conf')
-    #ServerConf.readFile()
-    print "Start Server ...."
+    ## Implementation of kereberos servers (ASServer and TGS Server
+    ## run only if this file is used as main file (wont run if this file is imported by other )
+    print "This is Kerberos Server demonstration (Not Module ...)"
+    ConfFile= sys.argv[1] if len(sys.argv) > 1 else 'Configuration/kerberosConfiguration.conf'
+    print "Reading configuration file" , ConfFile
+    ServerConf=PkgHandle.Config(ConfFile)
     KerberosServer=Kr_AuthServer(**ServerConf.AuthenticationServer)
     TGSServer=Kr_TGSServer(**ServerConf.TGSServer)
-    KerberosServer.StartServer()
-    TGSServer.StartServer()
-    time.sleep(600)
+    thread.start_new_thread(KerberosServer.StartServer,())
+    thread.start_new_thread(TGSServer.StartServer,())
+    time.sleep(1)
+    # replace the following if statement with infinite loop - to run servers without time limit
+    if KerberosServer.Running and TGSServer.Running:
+        time.sleep(600)
     KerberosServer.StopServer()
     TGSServer.StopServer()
     print "Server Finished ...."
