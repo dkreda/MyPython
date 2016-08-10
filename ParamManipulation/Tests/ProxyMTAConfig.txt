@@ -1,0 +1,85 @@
+###############################################################################
+#	MTA Answer File ( For VI Suite configuration )
+#	CAS Unit
+# Parameters Description:
+#
+# RelayRule	: maildomain [via hostname]
+#		  This parameter add relay domain + route to next mta
+#		  This parametr can have multy values ( at domain but not at via )
+#		  example RelayRule= *.mte via 10.20.30.40
+#		  RelayRule= comverse.com via casmta.site1
+#		  RelayRule= comvare.com,Test.vi.comvers.mail via casmta.site1
+#
+#
+# AllowDomains	: domain List of Allow Authentication + Relay (these domains do not need
+#			Authentication and may allowed to send to remote relay MTA ).
+#		  Exaple: AllowDomains=comverse.com
+#		  Exaple: AllowDomains=Google.co.il,Smith.Micro.com
+#
+# AllowIPs	: IP List or range (IP/Mask) of Allow Authentication + Relay (these IPs do not need
+#			Authentication and may allowed to send to remote relay MTA ).
+#		  Exaple: AllowIPs=1.2.3.4,10.20.0.0/16,9.10.0.0/255.255.0.0
+#
+#
+# AllowManagerIPs: IP or Range (IP/Mask) of Allowed Access to Manage MTA.
+#		   Note - This Parameter may get JUST ONE Parameter. if there is need to 
+#			  set few IPs / Ranges then wite each Value in seperate line.
+#
+# AddUser	:   user@domain password
+#		    Adds Administrator user to MTA. if the domain not exists
+#		    add the doman too.
+# DefaultFilter :  add Default Filtter to MTA. Default Filtter syntax should be:
+#		   (ACCEPT/REFUSE)  LBL "Description Text"  ... Filter ....
+#		   example: 
+#		   DefaultFilter=ACCEPT LBL "V2T_ENGINE_MTA" IP-RELAY 1.1.0.0/16
+#
+# Cmd		:  any MTA Command ( No need password )
+#		   example:
+#		   cmd=LANGUAGE REMOVE french
+#
+# Clear		: Clear Access Lists:
+#		  Clear=accessrelay   -> This will clear all access Relay
+#		  Clear=accessauth    -> This will Clear all access authenticate
+#		  Clear=accessrelay,accessauth -> This will clear all access Relay + all access authenticate.
+#
+# ExternalMTA	:  N/A
+# ManagerPassword: N/A
+#
+# Paramer setting : Just enter the parametername=Value
+#	   	    Exaple: 
+#		    MessageTimeout=20   - will set the message timeout to 20.
+#
+###############################################################################
+
+		###########################################
+		#  Common Configuration (all services)    #
+		###########################################
+AllowIPs=## White List ###
+PLAINEnable=1
+LOGINEnable=1
+AddUser=app_proxy_user@cns.mips.com 'kSjd2$tr'
+DefaultFilter=ACCEPT LBL "LocalDSN" IP-RELAY 127.0.0.1/255.255.255.255
+### whiteList add by serviceKit
+
+## Note - This configuration is relevant ONLY for Insight3
+## Acording to Galit -> Pini this is not relevant anymore
+## RelayRule=##DomainName## via esu.site1 50025
+cmd=SECURITY SERVER ADD esu.site1 remote PROTECTION=0 ACCOUNT=webinbox@##DomainName## CPASS=12345678
+
+
+
+## ?     BackoffDelay="120 600 1200 1200 2400 3600 3600 3600 7200 7200 14400 28800"
+
+## Webinbox configuration ###
+AddUser=rt45FggQx@webinbox.com inFG459k3
+
+###     MTE Configuration ####
+DefaultFilter=ACCEPT LBL "IS4 MTE" RELAY-TO *.MTE
+DefaultFilter=ACCEPT LBL "MTE AMTE" RELAY-TO *.AMTE
+DefaultFilter=ACCEPT LBL "MTE ODMTE" RELAY-TO *.ODMTE
+######### Add By ServiceKit ExternalRelayPort 
+######### Add By ServiceKit ExternalRelayHost
+
+
+#### Direct Deposite Configuration  ###
+#### Build Domain Filter 

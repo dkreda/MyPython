@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SWIM>
+  <Component Name="Add_VAN_to_Balancer_Deployments" Version="First-Draft" Platform="Linux">
+    <!--This CAF File is implementation of /Add_WHC_Service/Deployments/Add_VAN_to_Balancer.Add_VAN_to_Balancer-->
+    <Install>
+      <Execute ExecutionOrder="1000">
+        <Command>cd /usr/cti/conf/balancer; grep van InputApplicationList.xml &gt; /dev/null; if [ $? -ne 0 ]; then sed '/&lt;InputApplicationList.*&gt;/a \&lt;Application ApplicationName\=\"van.site1\" Network\=\"Data\" TTL\=\"0\" PollingIntervalCounter\=\"6\" NumFailuresBeforeStatus\=\"1\"\&gt; \&lt;ConnectivityCheck Type\=\"Port\"\&gt; \&lt;Port PortNumber\=\"8911\"\&gt; \&lt;Greeting GreatingEnabled\=\"No\"\/\&gt; \&lt;\/Port\&gt; \&lt;\/ConnectivityCheck\&gt; \&lt;\/Application\&gt;' InputApplicationList.xml &gt; InputApplicationList.xml.tmp; cp -f InputApplicationList.xml.tmp InputApplicationList.xml; rm -f InputApplicationList.xml.tmp; fi</Command>
+      </Execute>
+	  <Stam>Yofi</Stam>
+	  <With name="100"/>
+    </Install>
+  <Install MyNodeTest="Yeeeee"><Stam>100</Stam><Ok woks="100"/></Install></Component>
+  <Test Boom="Bam">
+          <Yofi>Tofi</Yofi>
+      <Level1>
+          <Array1 jimi="kkk">
+              ikim
+          </Array1>
+          <Array1 moo="jijij">
+              <Yofi>jjj</Yofi>
+          </Array1>
+          <Array1 Boom="Trach">
+              <Yofi>Helow</Yofi>
+          </Array1>
+          <Array1 Boom="Sec Attrib">
+              <Yofi>kkk</Yofi>
+          </Array1>
+          <Array1>hhhh</Array1>
+      </Level1>
+  </Test>
+  <Test bibi="Bam">
+      <Googl/>
+  </Test>
+    <Test viva="ooops">
+        <Yofi>heyy</Yofi>
+        <Array1 jimi="kkk">
+              ikim
+          </Array1>
+          <Array1 moo="jijij">
+              <Yofi>jjj</Yofi>
+          </Array1>
+          <Array1 Boom="Trach">
+              <Yofi>Helow</Yofi>
+          </Array1>
+          <Array1 Boom="Sec Attrib">
+              <Yofi>kkk</Yofi>
+          </Array1>
+          <Array1>hhhh</Array1>
+    </Test>
+    <Test Boom="Trach">
+        <Yofi>hhhhhh</Yofi>
+    </Test>
+
+</SWIM>
