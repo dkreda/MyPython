@@ -3,6 +3,7 @@ __author__ = 'dkreda'
 import Ini
 import xml.etree.ElementTree as XmlLib
 import re,sys,time,os
+import subprocess
 
 
 class ParamRuleEq(object):
@@ -85,40 +86,40 @@ class BaseEnum():
         if num < len(self.__Index):
             return self.__Index[num]
 
-class ParamParser():
+class ParamParserfffffffffffff():
 
     ParamPattern=re.compile('(.+?)=(.+?),([^,\:\/]{3})\:\/\/(.+?)\/([\/\[]+)(.+)')
 
-    def __init__(self,Str):
-        mRec=ParamParser.ParamPattern.match(Str)
-        if mRec is None:
-            raise SyntaxError('Ilegal parameter definition: "%s"' % Str)
-        self.__Name=mRec.group(1)
-        self.__UnitList=mRec.group(2)
-        self.__Type=mRec.group(3)
-        self.__FileName=mRec.group(4)
-        self.__Path=mRec.group(6)
-        if mRec.group(5)[len(mRec.group(5)) - 1 :] == '[' :
-            self.__Path= '[' + self.__Path
-    @property
-    def ParamName(self):
-        return self.__Name
+#    def __init__(self,Str):
+#        mRec=ParamParser.ParamPattern.match(Str)
+#        if mRec is None:
+#            raise SyntaxError('Ilegal parameter definition: "%s"' % Str)
+#        self.__Name=mRec.group(1)
+#        self.__UnitList=mRec.group(2)
+#        self.__Type=mRec.group(3)
+#       self.__FileName=mRec.group(4)
+#        self.__Path=mRec.group(6)
+#        if mRec.group(5)[len(mRec.group(5)) - 1 :] == '[' :
+#            self.__Path= '[' + self.__Path
+#    @property
+#    def ParamName(self):
+#        return self.__Name
 
-    @property
-    def Units(self):
-        return self.__UnitList.split(',')
+ #   @property
+ #   def Units(self):
+ #       return self.__UnitList.split(',')
 
-    @property
-    def FileType(self):
-        return self.__Type
+#    @property
+#    def FileType(self):
+#        return self.__Type
 
-    @property
-    def ParamPath(self):
-        return self.__Path
+#    @property
+#    def ParamPath(self):
+#        return self.__Path
 
-    @property
-    def File(self):
-        return self.__FileName
+#    @property
+#    def File(self):
+#        return self.__FileName
 
 class Handler():
     RegEx_pPath=re.compile('(.+?)\/([\/\[]+)(.+)')
@@ -161,18 +162,18 @@ class Handler():
         return Unit in self.__Units
 
 class Manipulator():
-
+    opMapping= { '=' : ParamRuleEq ,
+                 '!' : ParamRuleNotEq ,
+                 '~' : ParamRuleReg ,
+                 '>' : ParamRuleBigger ,
+                 '<' : ParamRuleLower }
     def __init__(self,pName,DepList,*Rules):
         self.__Name=pName
         self.__DepList=DepList
-        self.__Rules=Rules
+        self.__Rules=list(Rules)
         ### just Validate Rules
         for sRule in Rules:
-            if sRule.Size != len(DepList):
-                raise SyntaxError('Manipulator of "%s" has at list one wrong Rule' % pName,
-                                  'Depended number of items: %d, Rule Number of Items: %d ' % (len(DepList),sRule.Size),
-                                  'Rule: %s' % ','.join(sRule.pList))
-
+            self.validateRule(sRule)
 
     def calculate(self,pVal):
         #self.__Rules=ParamRuleEq()
@@ -184,6 +185,29 @@ class Manipulator():
     @property
     def paramName(self):
         return self.__Name
+
+    def addRule(self,Rule):
+        if self.validateRule(Rule):
+            self.__Rules.append(Rule)
+
+    def validateRule(self,Rule):
+        #Rule=ParamRuleEq()
+        if Rule.Size != len(self.__DepList):
+            raise SyntaxError('Manipulator of "%s" has at list one wrong Rule' % self.paramName,
+                              'Depended number of items: %d, Rule Number of Items: %d ' % (len(DepList), Rule.Size),
+                              'Rule: %s' % ','.join(Rule.pList))
+        else: return True
+
+    ## static Method
+    @staticmethod
+    def FactoryRule(RuleStr):
+        RulePattern=re.match('(.+?)=([%s])(.+)' % ''.join(Manipulator.opMapping.keys()) , RuleStr)
+        if RulePattern:
+            uList=RulePattern.group(3).split(',')
+            return Manipulator.opMapping[RulePattern.group(2)](RulePattern.group(1),*uList)
+        else:
+            raise SyntaxError('Unsupported manipulation rule "%s"' % RuleStr)
+
 
 class FileHandler(object):
 
@@ -373,6 +397,12 @@ class Logger():
         if self.__fh:
             self.__fh.close()
 
+def FactoryHandler(hType,FileName):
+    mapHandlers={ 'txt' : FileHandler_txt ,
+                  'ini' : FileHandler_Ini ,
+                  'xml' : FileHandler_xml }
+    return mapHandlers[hType](FileName)
+
 class ParamDeployer():
     RegEx_Macro=re.compile('%\$(.+?)%')
     RegEx_Param=re.compile('[^\\\\]{(\S+?)}')
@@ -398,7 +428,7 @@ class ParamDeployer():
         self.Handlers[fileHandler.getParamType][fileHandler.getFileName].append(fileHandler)
 
     def addHandlerStr(self,hStr,pName):
-        tmpMatch=ParamDeployer.RegEx_HandlerStr.match(self.extractText(hStr))
+        tmpMatch=ParamDeployer.RegEx_HandlerStr.match(self.extractMacros(hStr))
         if tmpMatch:
             unitList=tmpMatch.group(1)
             hType=tmpMatch.group(2)
@@ -418,34 +448,63 @@ class ParamDeployer():
                 # Fix the paramPath + Fname to be extract ....
                 #pRec=Handler()
                 self.__Log.WrLog(Logger.Level.Debug,"setting %s" % fName)
+
                 try:
-                    if pType == 'txt':
-                        FileH=FileHandler_txt(fName)
-                        #FileH.setParam(pRec.getParamPath,self.Params[pRec.getParamName])
-                    elif pType == 'ini':
-                        FileH=FileHandler_Ini(fName)
-                        #FileH.setParam(pRec.getParamPath,self.Params[pRec.getParamName])
-                    elif pType == 'xml' :
-                        FileH=FileHandler_xml(fName)
-                        #FileH.setParam(pRec.getParamPath,self.Params[pRec.getParamName])
-                    elif pType == 'cmd':
-                        Log.WrLog(Logger.Level.Debug,"Command handler not implemented yet")
-                    else:
-                        Log.WrLog(Logger.Level.Error,"Unsuported File Type " + pRec.getParamType)
-                        continue
-                    #FileH=FileHandler(fName)
+                    FileH = FactoryHandler(pType, fName)
+                    #if pType == 'txt':
+                    #    FileH=FileHandler_txt(fName)
+                    #    #FileH.setParam(pRec.getParamPath,self.Params[pRec.getParamName])
+                    #elif pType == 'ini':
+                    #    FileH=FileHandler_Ini(fName)
+                    #    #FileH.setParam(pRec.getParamPath,self.Params[pRec.getParamName])
+                    #elif pType == 'xml' :
+                    #    FileH=FileHandler_xml(fName)
+                    #    #FileH.setParam(pRec.getParamPath,self.Params[pRec.getParamName])
+                    #elif pType == 'cmd':
+                    #    Log.WrLog(Logger.Level.Debug,"Command handler not implemented yet")
+                    #else:
+                    #    #Log.WrLog(Logger.Level.Error,"Unsuported File Type " + pRec.getParamType)
+                    #    self.Error("Unsuported File Type " + pRec.getParamType)
+                    #    continue
+                    ##FileH=FileHandler(fName)
                 except IOError , e:
-                    self.__Log.WrLog(Logger.Level.Error,"Fail to open/read/write to %s" % fName ,
-                                     e.strerror,e.message)
+                    self.Error("Fail to open/read/write to %s" % fName ,e.strerror,e.message)
+                    #self.__Log.WrLog(Logger.Level.Error,"Fail to open/read/write to %s" % fName ,
+                    #                 e.strerror,e.message)
                     continue
+                except KeyError , e1:
+                    if e1.message != 'cmd' :
+                        self.Error("Unsupported file type " + e1.message)
+                        continue
                 for pRec in pList:
-                    if pType != 'cmd':
-                        if pRec.isInUnit(Unit):
-                            FileH.setParam(pRec.getParamPath,self.Params[pRec.getParamName])
-                            self.__Log.WrLog(Logger.Level.Debug,"update %s in %s" %
-                                             (pRec.getParamName,pRec.getFileName))
-                    else:
-                        self.__Log.WrLog(Logger.Level.Warning,"Running Command (Not Implemented)")
+                    #pRec=Handler()
+                    if pRec.isInUnit(Unit) and self.Params[pRec.getParamName] != '$Null' :
+                        if pType == 'cmd':
+                            cmdStr=self.extractText(pRec.getParamPath)
+                            self.__Log.WrLog(Logger.Level.Info,'Exxcute: %s' % cmdStr)
+
+                            Proc = subprocess.Popen(cmdStr, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                                    shell=True)
+                            (sout, serr) = Proc.communicate()
+                            Proc.wait()
+                            if Proc.returncode:
+                                self.Error(*sout.split(os.linesep))
+                                self.Error("** Last command Finished with exit code %d" % Proc.returncode )
+                            else:
+                                self.__Log.WrLog(Logger.Level.Debug,*sout.split(os.linesep))
+                        else: # regular File Handler
+                            FileH.setParam(pRec.getParamPath, self.Params[pRec.getParamName])
+                            self.__Log.WrLog(Logger.Level.Debug, "update %s in %s" %
+                                     (pRec.getParamName, pRec.getFileName))
+                    #if pType != 'cmd':
+                    #    if pRec.isInUnit(Unit):
+                    #        FileH.setParam(pRec.getParamPath,self.Params[pRec.getParamName])
+                    #        self.__Log.WrLog(Logger.Level.Debug,"update %s in %s" %
+                    #                         (pRec.getParamName,pRec.getFileName))
+                    #else:
+                    #    self.__Log.WrLog(Logger.Level.Warning,"Running Command (Not Implemented)")
+                        #print pRec
+                    #    self.__Log.WrLog(Logger.Level.Debug,"Should Execute:" ,self.extractText(pRec.getParamPath))
                 if pType != 'cmd' : FileH.Commit()
 
     @property
@@ -457,17 +516,24 @@ class ParamDeployer():
             self.Macros[mName]=mVal
             #self.Macros[mName]=self.extractText(mVal)
 
+    def Error(self,*messages):
+        self.__ErrorList.append(messages[0])
+        self.__Log.WrLog(Logger.Level.Error,*messages)
+
+    def extractMacros(self,Text):
+        LastMatch = ParamDeployer.RegEx_Macro.search(Text)
+        while LastMatch:
+            MacStr = '%$' + LastMatch.group(1) + '%'
+            try:
+                Text = Text.replace(MacStr, self.Macros[LastMatch.group(1)])
+            except KeyError, e:
+                raise KeyError('Undefined macro "%s" ' % LastMatch.group(1), e.message, e.args)
+            LastMatch = ParamDeployer.RegEx_Macro.search(Text)
+        return Text
 
     def extractText(self,Text):
         ## extract Macros ##
-        LastMatch=ParamDeployer.RegEx_Macro.search(Text)
-        while LastMatch:
-            MacStr= '%$' + LastMatch.group(1) + '%'
-            try:
-                Text=Text.replace(MacStr,self.Macros[LastMatch.group(1)])
-            except KeyError, e:
-                raise KeyError('Undefined macro "%s" ' % LastMatch.group(1), e.message , e.args)
-            LastMatch=ParamDeployer.RegEx_Macro.search(Text)
+        Text=self.extractMacros(Text)
         ## extract Params ##
         LastMatch=ParamDeployer.RegEx_Param.search(Text)
         while LastMatch:
@@ -475,7 +541,9 @@ class ParamDeployer():
             try:
                 Text=Text.replace(ParamStr,self.Params[LastMatch.group(1)])
             except KeyError, e:
-                raise KeyError('Undefined Parameter "%s" ' % LastMatch.group(1), e.message , e.args)
+                for pn,pv in self.Params.items():
+                    print '%-13s %17s' % (pn,pv)
+                raise KeyError('Undefined Parameter "%s", resolving "%s"' % (LastMatch.group(1),Text), e.message , e.args)
             LastMatch=ParamDeployer.RegEx_Param.search(Text)
         Text=Text.replace('\\{','{')
         return Text
@@ -519,16 +587,6 @@ def ReadCLI():
         Result[Last]=None
     return  Result
 
-#ttt = re.match('(\d+)(.)(\d+)(\d+)(\d+)','055-6626')
-#print ttt.lastindex
-#print ttt.lastgroup
-#print ttt.groups()
-#a=time.time()
-#for i in xrange(5):
-#    a=time.time()
-#    print "Backup.%f" % a
-#print a,":",a.__class__
-#sys.exit(0)
 
 if __name__ == '__main__':
     Conf=ReadCLI()
@@ -551,11 +609,13 @@ if __name__ == '__main__':
         Macros=IniParser.getParams('Macros')
         OctObj.addMacros(**Macros)
         ## Parse / Add Manipulation Rules
-        RulePattern=re.compile('(.+?)=([=~><!])(.+)')
+        #RulePattern=re.compile('(.+?)=([=~><!])(.+)')
         DepList=IniParser.getParams('Octopus.Parameters.Mapping')
         for (pMainName,pDepName) in DepList.items():
+
             RuleList=[]
             #LineNum=0
+            tmpManipulator=Manipulator(pMainName,pDepName.split(','))
             (Start,Stop)=IniParser.SecMap['Octopus.Parameters.Def.' + pMainName]
             for LineNum in xrange(Start,Stop):
                 rLine=IniParser.Content[LineNum]
@@ -563,44 +623,22 @@ if __name__ == '__main__':
                         # Ignore comments or empty lines
                         continue
                 try:
-                    tmpMatch=RulePattern.match(rLine)
-                    dList=tmpMatch.group(3)
-                    if tmpMatch.group(2) == '=' :
-                        RuleList.append(ParamRuleEq(tmpMatch.group(1),*dList.split(',')))
-                    elif tmpMatch.group(2) == '!' :
-                        RuleList.append(ParamRuleNotEq(tmpMatch.group(1),*dList.split(',')))
-                    elif tmpMatch.group(2) == '>' :
-                        RuleList.append(ParamRuleBigger(tmpMatch.group(1),*dList.split(',')))
-                    elif tmpMatch.group(2) == '~' :
-                        RuleList.append(ParamRuleReg(tmpMatch.group(1),*dList.split(',')))
-                    elif tmpMatch.group(2) == '<' :
-                        RuleList.append(ParamRuleLower(tmpMatch.group(1),*dList.split(',')))
-                    else :
-                        Log.WrLog(Logger.Level.Error,'Unsupported manipulation rule "%s" at Line %d:' %
-                                  (tmpMatch.group(2),LineNum ,),rLine,"Ignore this Line")
-                        continue
+                    tmpManipulator.addRule(Manipulator.FactoryRule(rLine))
                 except SyntaxError , e:
-
-                    Log.WrLog(Logger.Level.Error,'bad Manipulation rules for "%s"' % pMainName ,
-                              e.message, 'at Line %d' % LineNum)
-                    print "??????????????????????"
+                    OctObj.Error('bad Manipulation rules for "%s" at line %d' % (pMainName,LineNum) , e.message)
                     continue
-                    #raise SyntaxError("")
-                #RuleList.append(ParamRuleEq(rLine))
                 print "Debug - Checking " , rLine
             try:
-                tmpManip=Manipulator(pMainName,pDepName.split(','),*RuleList)
-                OctObj.addManipulator(tmpManip)
+#                tmpManip=Manipulator(pMainName,pDepName.split(','),*RuleList)
+                OctObj.addManipulator(tmpManipulator)
             except SyntaxError , e:
-                Log.WrLog(Logger.Level.Error,'bad Manipulation rules for "%s" at Line %d:' %
-                          (pMainName , Start) ,*e.args)
+                OctObj.Error('bad Manipulation rules for "%s" at Line %d:' % (pMainName , Start) ,*e.args)
+                #Log.WrLog(Logger.Level.Error,'bad Manipulation rules for "%s" at Line %d:' %
+                #          (pMainName , Start) ,*e.args)
                 continue
 
 
         ### Add Handlers:
-        #aa=IniParser.Section('RealName.Parameters.Def')
-        #RecPattern=re.compile('(.+),(\S{3}):\/\/(.+)')
-        #ParamPattern=re.compile('(.+?)\/([\/\[]+)(.+)')
         for pName,pRec in IniParser.getParams('RealName.Parameters.Def').items():
             #print Record , xxx
             OctObj.addHandlerStr(pRec,pName)
@@ -610,4 +648,7 @@ if __name__ == '__main__':
         OctObj.ManipulatParams()
         Log.WrLog(Logger.Level.Info,"Start setting parameters in files.")
         OctObj.setParams(Conf['Unit'])
+        Log.WrLog(Logger.Level.Info,"Deploy Parameters Finished " + ("With Errors (see log)" if OctObj.Errors else
+                  "Succesfully :-)") )
+        sys.exit(OctObj.Errors)
 
