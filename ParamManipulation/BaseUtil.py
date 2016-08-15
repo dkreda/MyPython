@@ -1,77 +1,11 @@
 __author__ = 'dkreda'
 
 import Ini
-import xml.etree.ElementTree as XmlLib
+#import xml.etree.ElementTree as XmlLib
 import re,sys,time,os
 import subprocess
 
 
-class ParamRuleEq(object):
-
-    def __init__(self,Rule,*ParamNameList):
-        self.Rule=Rule
-        self.pList=ParamNameList
-
-    def verify(self,pVal):
-        return self.Rule == pVal
-    @property
-    def Size(self):
-        return len(self.pList)
-
-    def Calc(self,pVal):
-        return self.pList
-
-class ParamRuleNotEq(ParamRuleEq):
-
-    def verify(self,pVal):
-        return self.Rule != pVal
-
-class ParamRuleBigger(ParamRuleEq):
-
-    def verify(self,pVal):
-        return self.Rule > pVal
-
-class ParamRuleLower(ParamRuleEq):
-
-    def verify(self,pVal):
-        return self.Rule < pVal
-
-class ParamRuleReg(ParamRuleEq):
-    pRep=re.compile('(^|[^\\\\])\$(\d+)')
-    def verify(self,pVal):
-        return True if re.search(self.Rule,pVal) else False
-
-    def __subVals(self,pVal,MatchRec):
-        #MatchRec=re.search()
-        #pVal=""
-        tmpMatch=ParamRuleReg.pRep.search(pVal)
-        while tmpMatch:
-            #print "Debug - Replace Reg grp Params ...." , tmpMatch.lastindex
-            #print pVal , " .... " , tmpMatch.groups()
-            for gNum in tmpMatch.groups():
-            #for gNum in xrange(1 ,tmpMatch.lastindex + 1):
-                if not gNum.isdigit(): continue
-                repStr='$' + gNum
-                #print "Check For" ,gNum ," (" , MatchRec.lastindex
-                #print "Before:" , pVal
-                pVal=re.sub(r'\\\$','<###>',pVal)
-                #print "After :" ,pVal
-                pVal=pVal.replace(repStr,MatchRec.group(int(gNum)))
-                pVal=re.sub('<###>','\\\$',pVal)
-            tmpMatch=ParamRuleReg.pRep.search(pVal)
-        return pVal
-        #while tmpMatch:
-        #    repStr='$%s' % tmpMatch.
-
-    def Calc(self,pVal):
-        #print "Debug - Calculate Regular Expresion Rule"
-        tmpMatch=re.search(self.Rule,pVal)
-        #print "pList type is " ,self.Size , " >>>>" , ','.join(self.pList)
-        result=[]
-        for Num in xrange(self.Size):
-            result.append(self.__subVals(self.pList[Num],tmpMatch))
-            #self.pList[Num]=self.__subVals(self.pList[Num],tmpMatch)
-        return result
 
 class BaseEnum():
 
@@ -86,271 +20,9 @@ class BaseEnum():
         if num < len(self.__Index):
             return self.__Index[num]
 
-class ParamParserfffffffffffff():
-
-    ParamPattern=re.compile('(.+?)=(.+?),([^,\:\/]{3})\:\/\/(.+?)\/([\/\[]+)(.+)')
-
-#    def __init__(self,Str):
-#        mRec=ParamParser.ParamPattern.match(Str)
-#        if mRec is None:
-#            raise SyntaxError('Ilegal parameter definition: "%s"' % Str)
-#        self.__Name=mRec.group(1)
-#        self.__UnitList=mRec.group(2)
-#        self.__Type=mRec.group(3)
-#       self.__FileName=mRec.group(4)
-#        self.__Path=mRec.group(6)
-#        if mRec.group(5)[len(mRec.group(5)) - 1 :] == '[' :
-#            self.__Path= '[' + self.__Path
-#    @property
-#    def ParamName(self):
-#        return self.__Name
-
- #   @property
- #   def Units(self):
- #       return self.__UnitList.split(',')
-
-#    @property
-#    def FileType(self):
-#        return self.__Type
-
-#    @property
-#    def ParamPath(self):
-#        return self.__Path
-
-#    @property
-#    def File(self):
-#        return self.__FileName
-
-class Handler():
-    RegEx_pPath=re.compile('(.+?)\/([\/\[]+)(.+)')
-    #def __init__(self,pName,FilePath,pPath,pType,*unitList):
-    def __init__(self,pName,pType,pPath,*unitList):
-        self.__Name=pName
-        self.__Type=pType
-        self.__Units=unitList
-        if pType == 'cmd' :
-            self.__Path=pPath
-            self.__File=None
-        else:
-            tmpMatch=Handler.RegEx_pPath.match(pPath)
-            if tmpMatch:
-                self.__File=tmpMatch.group(1)
-                tmpStr=tmpMatch.group(2)
-                tmp=tmpStr.find('[')
-                if tmp < 0 : tmp=2
-                self.__Path= tmpStr[tmp:] + tmpMatch.group(3)
-            else:
-                raise SyntaxError('fail to resolve file name or parameter path from "%s"' % pPath)
-
     @property
-    def getParamName(self):
-        return self.__Name
-
-    @property
-    def getParamPath(self):
-        return self.__Path
-
-    @property
-    def getParamType(self):
-        return self.__Type
-
-    @property
-    def getFileName(self):
-        return self.__File
-
-    def isInUnit(self,Unit):
-        return Unit in self.__Units
-
-class Manipulator():
-    opMapping= { '=' : ParamRuleEq ,
-                 '!' : ParamRuleNotEq ,
-                 '~' : ParamRuleReg ,
-                 '>' : ParamRuleBigger ,
-                 '<' : ParamRuleLower }
-    def __init__(self,pName,DepList,*Rules):
-        self.__Name=pName
-        self.__DepList=DepList
-        self.__Rules=list(Rules)
-        ### just Validate Rules
-        for sRule in Rules:
-            self.validateRule(sRule)
-
-    def calculate(self,pVal):
-        #self.__Rules=ParamRuleEq()
-        for rIter in self.__Rules:
-            if rIter.verify(pVal):
-                return dict(zip(self.__DepList,rIter.Calc(pVal)))
-        raise LookupError('Fail to find matching rule for "%s" (%s).' % (self.__Name,pVal))
-
-    @property
-    def paramName(self):
-        return self.__Name
-
-    def addRule(self,Rule):
-        if self.validateRule(Rule):
-            self.__Rules.append(Rule)
-
-    def validateRule(self,Rule):
-        #Rule=ParamRuleEq()
-        if Rule.Size != len(self.__DepList):
-            raise SyntaxError('Manipulator of "%s" has at list one wrong Rule' % self.paramName,
-                              'Depended number of items: %d, Rule Number of Items: %d ' % (len(DepList), Rule.Size),
-                              'Rule: %s' % ','.join(Rule.pList))
-        else: return True
-
-    ## static Method
-    @staticmethod
-    def FactoryRule(RuleStr):
-        RulePattern=re.match('(.+?)=([%s])(.+)' % ''.join(Manipulator.opMapping.keys()) , RuleStr)
-        if RulePattern:
-            uList=RulePattern.group(3).split(',')
-            return Manipulator.opMapping[RulePattern.group(2)](RulePattern.group(1),*uList)
-        else:
-            raise SyntaxError('Unsupported manipulation rule "%s"' % RuleStr)
-
-
-class FileHandler(object):
-
-    def __init__(self,FilePath):
-        #tmpFh=open(FilePath,'r')
-        self.__FileName=FilePath
-        #self.Content=tmpFh.readall()
-        #tmpFh.close()
-
-    @property
-    def getFileName(self):
-        return self.__FileName
-
-    def Backup(self):
-        IncNum=0
-        bFile=self.__FileName + '.Backup.%f' % (time.time() + IncNum)
-        while os.path.exists(bFile):
-            IncNum += 1
-            bFile=self.__FileName + '.Backup.%f' % (time.time() + IncNum)
-        os.rename(self.__FileName,bFile)
-        return bFile
-
-    def setParam(self,pPath,pVal):
-        pass
-
-
-
-class FileHandler_Ini(FileHandler):
-
-    def __init__(self,FilePath):
-        super(FileHandler_Ini,self).__init__(FilePath)
-        self.Handler=Ini.INIFile(FilePath)
-
-    def setParam(self,pPath,pVal):
-        self.Handler.SetParam(pPath,pVal)
-
-    def Commit(self):
-        if self.Backup():
-            self.Handler.WriteFile()
-
-class FileHandler_xml(FileHandler):
-    def __init__(self,FilePath):
-        #tmpFh=open(FilePath,'r')
-        #self.Content=tmpFh.readall()
-        #self.__FileName=FilePath
-        super(FileHandler_xml,self).__init__(FilePath)
-        self.Handler=XmlLib.parse(FilePath)
-        self.Root=self.Handler.getroot()
-
-    def setParam(self,pPath,pVal):
-        #self.Root=XmlLib.ElementTree()
-        XPath= '.' + pPath if pPath[0] == '/' else pPath
-        for xmlIter in self.Root.findall(XPath):
-            #xmlIter=XmlLib.Element()
-            xmlIter.text=pVal
-
-    def Commit(self):
-        if self.Backup():
-            self.Handler.write(self.getFileName)
-        #pass
-
-class FileHandler_txt(FileHandler):
-    RegEx_txtParam=re.compile('(\[(.+?)\])*(.+)')
-
-    def __init__(self,FilePath):
-        super(FileHandler_txt,self).__init__(FilePath)
-        tmpFh=open(FilePath,'r')
-        #self.__FileName=FilePath
-        self.Content=tmpFh.readlines()
-        tmpFh.close()
-
-    def setParam(self,pPath,pVal):
-        tmpMatch=FileHandler_txt.RegEx_txtParam.match(pPath)
-        pName=tmpMatch.group(3)
-        switchs= tmpMatch.group(2) if tmpMatch.group(2) else 's '
-        tmpMatch=re.search('([rab])(\S+)',switchs)
-        if tmpMatch: # Replace Switch
-            if tmpMatch.group(1) == 'r':
-                repStr=tmpMatch.group(2)
-                aStr=None
-                bStr=None
-            elif tmpMatch.group(1) == 'a':
-                repStr=None
-                aStr=tmpMatch.group(2)
-                bStr=None
-            elif tmpMatch.group(1) == 'b':
-                repStr=None
-                aStr=None
-                bStr=tmpMatch.group(2)
-
-            switchs=switchs.replace(tmpMatch.group(1) + tmpMatch.group(2) ,'')
-            if switchs.find('v') < 0 : switchs += 'v '
-        else:
-            repStr=None
-            aStr=None
-            bStr=None
-
-        tmpMatch=re.search('v(.)',switchs)
-        vSep=tmpMatch.group(1) if tmpMatch else None
-        tmpMatch=re.search('s(.)',switchs)
-        pSep= tmpMatch.group(1) if tmpMatch else ' '
-        lFlag=False if switchs.find('l') < 0 else True
-        ChangeFlag=False
-        for LineNum in xrange(len(self.Content)):
-            lastPos=self.Content[LineNum].find(pName + pSep)
-            if LineNum > 230:
-                a=self.Content[LineNum]
-                b=pName + pSep
-                print "...."
-            if lastPos < 0: continue
-            if lastPos > 0 and not self.Content[LineNum][:lastPos].isspace() : continue
-            Parts=self.Content[LineNum].split(pSep,1)
-            print "Debug -- Find the Parameter at Line " , LineNum
-            if repStr:
-                Parts[1].replace(repStr,pVal)
-            elif aStr:
-                index=Parts[1].find(aStr)
-                if index < 0 : index=len(Parts[1])
-                index=Parts[1].find(vSep,index + len(aStr) - 1)
-                if index <0 : index=len(Parts[1])
-                Parts[1] = Parts[1][:index] + vSep + pVal + Parts[1][index:]
-            elif bStr:
-                index=Parts[1].find(bStr)
-                if index <0 : index =0
-                while index > 0 :
-                    index -= 1
-                    if Parts[1][index] == vSep : break
-                Parts[1] = Parts[1][:index] + pVal + vSep + Parts[1][index:]
-            elif vSep:
-                Parts[1] = Parts[1].rstrip() + vSep + pVal +"\n" if lFlag else pVal + vSep + Parts[1]
-            else:
-                Parts[1]=pVal
-            self.Content[LineNum]=pSep.join(Parts)
-            ChangeFlag=True
-        if not ChangeFlag: self.Content.append(pSep.join((pName,pVal + "\n")))
-
-    def Commit(self):
-        if self.Backup():
-            tmpFh=open(self.getFileName,'w')
-            tmpFh.write("".join(self.Content))
-            tmpFh.close()
-
-
+    def EnumSize(self):
+        return len(self.__Index)
 
 class ParamsSetter():
 
@@ -369,10 +41,8 @@ class ParamsSetter():
             self.Handlers[HandlerType][FileName].setParam(pPath)
 
 class Logger():
-    #Level=enum('LogLevel',"Debug","Info","Warning","Error","Fatal")
     Level=BaseEnum("Debug","Info","Warning","Error","Fatal")
     def __init__(self,LogFile,ExposeLevel,Prefix=""):
-        print Logger.Level
         self.Prefix=Prefix
         self.exLevel=ExposeLevel
         try:
@@ -384,7 +54,8 @@ class Logger():
 
     def WrLog(self,level,*messages):
         if level >= self.exLevel:
-            prefix= '%-7s- %s %s:' % (self.Level.getIndex(level),time.ctime(time.time()),self.Prefix)
+            prefix= '%-7s- %s %s:' % (self.Level.getIndex(level),time.ctime(time.time()),self.Prefix) \
+                    if level < self.Level.EnumSize else ''
             tmpStr= "\n" + ' ' * len(prefix)
             Message= prefix + tmpStr.join(messages)
             print Message
@@ -392,6 +63,19 @@ class Logger():
                 self.__fh.write(Message)
                 self.__fh.write("\n")
                 self.__fh.flush()
+
+    def Box(self,*messages,**keyargs):
+        Size=keyargs.get('Size',-1)
+        BoxCh=keyargs.get('BoxCh','#')
+        if Size < 0 :
+            for line in messages:
+                if len(line) > Size: Size=len(line)
+            Size
+        BoxLines=[ '%s %*s %s' % (BoxCh,-Size,Mes,BoxCh) for Mes in messages ]
+        #BoxLines=[]
+        BoxLines.append(BoxCh * (Size + 4))
+        BoxLines.insert(0,BoxCh * (Size + 4) )
+        self.WrLog(self.Level.Fatal + 100,*BoxLines)
 
     def __del__(self):
         if self.__fh:
@@ -451,26 +135,8 @@ class ParamDeployer():
 
                 try:
                     FileH = FactoryHandler(pType, fName)
-                    #if pType == 'txt':
-                    #    FileH=FileHandler_txt(fName)
-                    #    #FileH.setParam(pRec.getParamPath,self.Params[pRec.getParamName])
-                    #elif pType == 'ini':
-                    #    FileH=FileHandler_Ini(fName)
-                    #    #FileH.setParam(pRec.getParamPath,self.Params[pRec.getParamName])
-                    #elif pType == 'xml' :
-                    #    FileH=FileHandler_xml(fName)
-                    #    #FileH.setParam(pRec.getParamPath,self.Params[pRec.getParamName])
-                    #elif pType == 'cmd':
-                    #    Log.WrLog(Logger.Level.Debug,"Command handler not implemented yet")
-                    #else:
-                    #    #Log.WrLog(Logger.Level.Error,"Unsuported File Type " + pRec.getParamType)
-                    #    self.Error("Unsuported File Type " + pRec.getParamType)
-                    #    continue
-                    ##FileH=FileHandler(fName)
                 except IOError , e:
                     self.Error("Fail to open/read/write to %s" % fName ,e.strerror,e.message)
-                    #self.__Log.WrLog(Logger.Level.Error,"Fail to open/read/write to %s" % fName ,
-                    #                 e.strerror,e.message)
                     continue
                 except KeyError , e1:
                     if e1.message != 'cmd' :
@@ -496,15 +162,6 @@ class ParamDeployer():
                             FileH.setParam(pRec.getParamPath, self.Params[pRec.getParamName])
                             self.__Log.WrLog(Logger.Level.Debug, "update %s in %s" %
                                      (pRec.getParamName, pRec.getFileName))
-                    #if pType != 'cmd':
-                    #    if pRec.isInUnit(Unit):
-                    #        FileH.setParam(pRec.getParamPath,self.Params[pRec.getParamName])
-                    #        self.__Log.WrLog(Logger.Level.Debug,"update %s in %s" %
-                    #                         (pRec.getParamName,pRec.getFileName))
-                    #else:
-                    #    self.__Log.WrLog(Logger.Level.Warning,"Running Command (Not Implemented)")
-                        #print pRec
-                    #    self.__Log.WrLog(Logger.Level.Debug,"Should Execute:" ,self.extractText(pRec.getParamPath))
                 if pType != 'cmd' : FileH.Commit()
 
     @property
@@ -633,8 +290,6 @@ if __name__ == '__main__':
                 OctObj.addManipulator(tmpManipulator)
             except SyntaxError , e:
                 OctObj.Error('bad Manipulation rules for "%s" at Line %d:' % (pMainName , Start) ,*e.args)
-                #Log.WrLog(Logger.Level.Error,'bad Manipulation rules for "%s" at Line %d:' %
-                #          (pMainName , Start) ,*e.args)
                 continue
 
 
